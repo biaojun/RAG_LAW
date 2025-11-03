@@ -2,18 +2,18 @@ import os
 import re
 import chromadb
 import requests
+import config
 from typing import List, Dict
 from zai import ZhipuAiClient
 
 # 智谱Embedding3配置
-ZHIPU_API_KEY = "d03dac744afc4393b521ae5ebefbc7ac.yBJNhreyUJcVEfiK"
-MAX_BATCH_SIZE = 64  # 智谱API单次最大输入限制
 
 
 class ZhipuEmbeddingFunction:
     """智谱Embedding3嵌入函数"""
     """（添加name属性）"""
-    def name(self):
+    def name(self, path="./config/basic_config.json"):
+        self.zhipu_api_key = os.getenv("ZHIPU_API_KEY")
         """返回嵌入模型名称（Chroma要求的方法）"""
         return "zhipu-embedding-3"  # 关键修复：将name改为方法
     def __call__(self, input: List[str]) -> List[List[float]]:
@@ -26,7 +26,7 @@ class ZhipuEmbeddingFunction:
             "input": input
         }
         # response = requests.post(ZHIPU_EMBEDDING_URL, headers=headers, json=data)
-        client = ZhipuAiClient(api_key= ZHIPU_API_KEY)
+        client = ZhipuAiClient(api_key= self.zhipu_api_key)
         response = client.embeddings.create(
         model="embedding-3", #填写需要调用的模型编码
         input=input,
@@ -37,6 +37,8 @@ class ZhipuEmbeddingFunction:
 
 class LegalChromaStore:
     def __init__(self, chroma_persist_dir: str = "./chroma_legal_db"):
+        config = config.read_config()
+        self.max_batch_size = config["ZHIPU_MAX_BATCH_SIZE"]
         self.client = chromadb.PersistentClient(path=chroma_persist_dir)
         self.embedding_function = ZhipuEmbeddingFunction()
         self.collection = self.client.get_or_create_collection(
@@ -91,12 +93,12 @@ class LegalChromaStore:
             print("未找到有效数据")
             return
         
-        # 分批入库（每批不超过MAX_BATCH_SIZE）
+        # 分批入库（每批不超过self.max_batch_size）
         total = len(all_documents)
-        print(f"开始入库，共{total}条数据，每批最多{MAX_BATCH_SIZE}条...")
+        print(f"开始入库，共{total}条数据，每批最多{self.config[""]}条...")
         
-        for i in range(0, total, MAX_BATCH_SIZE):
-            end = min(i + MAX_BATCH_SIZE, total)
+        for i in range(0, total, self.max_batch_size):
+            end = min(i + self.max_batch_size, total)
             batch_docs = all_documents[i:end]
             batch_metas = all_metadatas[i:end]
             batch_ids = all_ids[i:end]
