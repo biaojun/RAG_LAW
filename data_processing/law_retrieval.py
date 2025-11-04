@@ -7,8 +7,6 @@ from rank_bm25 import BM25Okapi
 from typing import List, Dict
 from zai import ZhipuAiClient
 # 智谱Embedding3配置
-ZHIPU_API_KEY = "d03dac744afc4393b521ae5ebefbc7ac.yBJNhreyUJcVEfiK"
-
 class ZhipuEmbeddingFunction:
     """智谱Embedding3嵌入函数"""
     """（添加name属性）"""
@@ -16,7 +14,8 @@ class ZhipuEmbeddingFunction:
         """返回嵌入模型名称（Chroma要求的方法）"""
         return "zhipu-embedding-3"  # 关键修复：将name改为方法
     def __call__(self, input: List[str]) -> List[List[float]]:
-        client = ZhipuAiClient(api_key= ZHIPU_API_KEY)
+        self.zhipu_api_key = os.getenv("ZHIPU_API_KEY")
+        client = ZhipuAiClient(api_key= self.zhipu_api_key)
         response = client.embeddings.create(
         model="embedding-3", #填写需要调用的模型编码
         input=input,
@@ -28,8 +27,10 @@ class ZhipuEmbeddingFunction:
 
 
 class LegalChromaRetriever:
-    def __init__(self, chroma_persist_dir: str = "./chroma_legal_db"):
-        self.client = chromadb.PersistentClient(path=chroma_persist_dir)
+    def __init__(self, chroma_persist_dir: str = "law_chroma_db"):
+        self.workdir = os.getcwd()
+        chroma_persist_path = os.path.join(self.workdir, chroma_persist_dir)
+        self.client = chromadb.PersistentClient(path=chroma_persist_path)
         self.collection = self.client.get_collection(
             name="legal_articles",
             embedding_function=ZhipuEmbeddingFunction()

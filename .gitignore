@@ -1,4 +1,4 @@
 # for data_processing module
-data_processing/chroma_legal_db
+data_processing/*_db
 data_processing/__pycache__
 data_processing/formal_*

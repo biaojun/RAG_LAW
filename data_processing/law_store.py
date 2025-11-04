@@ -13,8 +13,7 @@ from zai import ZhipuAiClient
 class ZhipuEmbeddingFunction:
     """智谱Embedding3嵌入函数"""
     """（添加name属性）"""
-    def name(self,):
-        self.zhipu_api_key = os.getenv("ZHIPU_API_KEY")
+    def name(self):
         """返回嵌入模型名称（Chroma要求的方法）"""
         return "zhipu-embedding-3"  # 关键修复：将name改为方法
     def __call__(self, input: List[str]) -> List[List[float]]:
@@ -22,11 +21,12 @@ class ZhipuEmbeddingFunction:
         #     "Content-Type": "application/json",
         #     "Authorization": f"Bearer {ZHIPU_API_KEY}"
         # }
-        data = {
-            "model": "embedding-3",
-            "input": input
-        }
+        # data = {
+        #     "model": "embedding-3",
+        #     "input": input
+        # }
         # response = requests.post(ZHIPU_EMBEDDING_URL, headers=headers, json=data)
+        self.zhipu_api_key = os.getenv("ZHIPU_API_KEY")
         client = ZhipuAiClient(api_key= self.zhipu_api_key)
         response = client.embeddings.create(
         model="embedding-3", #填写需要调用的模型编码
@@ -70,7 +70,7 @@ class LegalChromaStore:
             "id": f"{match.group(1)}_{match.group(2)}"
         }
 
-    def store_data(self, cleaned_data_dir_name: str = "cleaned_legal_data"):
+    def store_data(self, cleaned_data_dir_name):
         """分批入库，解决智谱API单次输入限制"""
         cleaned_data_dir = os.path.join(self.workdir, cleaned_data_dir_name)
         if self.collection.count() > 0:
@@ -83,7 +83,7 @@ class LegalChromaStore:
         all_ids = []
         
         for filename in os.listdir(cleaned_data_dir):
-            if filename.startswith("cleaned_") and filename.endswith(".txt"):
+            if filename.endswith(".txt"):
                 with open(os.path.join(cleaned_data_dir, filename), "r", encoding="utf-8") as f:
                     for line in f:
                         parsed = self._parse_cleaned_line(line)
