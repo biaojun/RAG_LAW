@@ -1,1 +1,3 @@
-*.txt
+# for data_processing module
+data_processing/chroma_legal_db
+data_processing/__pycache__
