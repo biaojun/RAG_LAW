@@ -32,7 +32,7 @@ class LegalChromaRetriever:
         chroma_persist_path = os.path.join(self.workdir, chroma_persist_dir)
         self.client = chromadb.PersistentClient(path=chroma_persist_path)
         self.collection = self.client.get_collection(
-            name="legal_articles",
+            name="law_articles",
             embedding_function=ZhipuEmbeddingFunction()
         )
         self.metadata_list = self._load_and_validate_metadata()
