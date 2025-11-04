@@ -124,8 +124,7 @@ class LegalChromaStore:
 # For data store:
 #     python chroma_store.py formal
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    data_folder = "test_legal_data"
+    data_folder = "test_law_data"
     try:
         # Check for excessive arguments
         if len(sys.argv) > 2:
