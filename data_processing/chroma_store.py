@@ -5,7 +5,7 @@ import requests
 from zhipu_config import read_config
 import sys
 from typing import List, Dict
-from zai import ZhipuAiClient
+from zai import ZhipuAI
 from cn2an import cn2an
 import json
 
@@ -29,7 +29,7 @@ class ZhipuEmbeddingFunction:
         # }
         # response = requests.post(ZHIPU_EMBEDDING_URL, headers=headers, json=data)
         self.zhipu_api_key = os.getenv("ZHIPU_API_KEY")
-        client = ZhipuAiClient(api_key= self.zhipu_api_key)
+        client = ZhipuAI(api_key= self.zhipu_api_key)
         response = client.embeddings.create(
                         model="embedding-3", #填写需要调用的模型编码
                         input=input,

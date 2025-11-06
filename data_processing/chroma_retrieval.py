@@ -5,7 +5,7 @@ import chromadb
 import requests
 from rank_bm25 import BM25Okapi
 from typing import List, Dict
-from zai import ZhipuAiClient
+from zai import ZhipuAI
 # 智谱Embedding3配置
 class ZhipuEmbeddingFunction:
     """智谱Embedding3嵌入函数"""
@@ -15,7 +15,7 @@ class ZhipuEmbeddingFunction:
         return "zhipu-embedding-3"  # 关键修复：将name改为方法
     def __call__(self, input: List[str]) -> List[List[float]]:
         self.zhipu_api_key = os.getenv("ZHIPU_API_KEY")
-        client = ZhipuAiClient(api_key= self.zhipu_api_key)
+        client = ZhipuAI(api_key= self.zhipu_api_key)
         response = client.embeddings.create(
         model="embedding-3", #填写需要调用的模型编码
         input=input,

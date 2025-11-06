@@ -5,7 +5,7 @@ import chromadb
 import requests
 from rank_bm25 import BM25Okapi
 from typing import List, Dict, Tuple
-from zai import ZhipuAiClient
+from zhipuai import ZhipuAI
 import json
 import time
 
@@ -27,7 +27,7 @@ class ZhipuEmbeddingFunction:
             return [[0.0] * 1024]  # embedding-3通常是1024维
 
         print(f"处理后的输入: {input}")
-        client = ZhipuAiClient(api_key=ZHIPU_API_KEY)
+        client = ZhipuAI(api_key=ZHIPU_API_KEY)
         response = client.embeddings.create(
             model="embedding-3",
             input=input,
@@ -42,7 +42,7 @@ class QueryProcessor:
     """查询处理器：负责查询改写和类别提取"""
 
     def __init__(self, api_key: str):
-        self.client = ZhipuAiClient(api_key=api_key)
+        self.client = ZhipuAI(api_key=api_key)
         self.law_categories = {
             "民法": ["婚姻", "继承", "合同", "物权", "侵权", "离婚", "财产", "债务"],
             "刑法": ["犯罪", "刑罚", "盗窃", "伤害", "抢劫", "诈骗", "毒品", "杀人"],
@@ -112,7 +112,7 @@ class QueryProcessor:
 
 class RerankModel:
     def __init__(self, api_key: str):
-        self.client = ZhipuAiClient(api_key=api_key)
+        self.client = ZhipuAI(api_key=api_key)
         self.api_key = api_key
         self.url = "https://open.bigmodel.cn/api/paas/v4/rerank"
 
