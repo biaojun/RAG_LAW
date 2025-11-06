@@ -136,7 +136,7 @@ def retrieve_and_generate(
             "law_article_num": r.get("law_article_num"),
             "similarity": r.get("similarity"),
             "rerank_score": r.get("rerank_score"),
-            "snippet": (r.get("text") or "").strip()[:300] + ("..." if r.get("text") and len(r.get("text")) > 300 else ""),
+            "snippet": (r.get("text") or "").strip(),
         }
         for r in results
     ]
