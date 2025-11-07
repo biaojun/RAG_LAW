@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -11,6 +11,8 @@ from datetime import datetime
 import uuid
 import glob
 import re
+import shutil
+# from rag_pipeline import retrieve_and_generate
 
 app = FastAPI(title="本地问答系统", version="1.0.0")
 
@@ -33,6 +35,18 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(STATIC_DIR, exist_ok=True)
 
+class QuestionRequest(BaseModel):
+    question: str
+    conversation_id: Optional[str] = None
+
+
+class QuestionResponse(BaseModel):
+    answer: str
+    context: list
+    message_id: str
+    timestamp: str
+    conversation_id: str
+
 # 优先尝试导入 RAG 流程；失败则在运行时回退到本地演示回答
 RAG_AVAILABLE = False
 try:
@@ -48,84 +62,6 @@ except Exception:
         RAG_AVAILABLE = True
     except Exception:
         RAG_AVAILABLE = False
-
-
-class QuestionRequest(BaseModel):
-    question: str
-    conversation_id: Optional[str] = None
-
-
-class QuestionResponse(BaseModel):
-    answer: str
-    context: list
-    message_id: str
-    timestamp: str
-    conversation_id: str
-
-
-def parse_message_from_file(filepath):
-    """从txt文件中解析消息内容"""
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            content = f.read()
-
-        # 解析文件内容
-        message_id = re.search(r'消息ID: (.+)', content)
-        message_type = re.search(r'类型: (.+)', content)
-        timestamp = re.search(r'时间: (.+)', content)
-        question = re.search(r'问题: (.+)', content)
-        answer = re.search(r'回答: (.+)', content)
-
-        return {
-            'id': message_id.group(1) if message_id else os.path.basename(filepath),
-            'type': message_type.group(1) if message_type else 'unknown',
-            'timestamp': timestamp.group(1) if timestamp else '',
-            'question': question.group(1) if question else '',
-            'answer': answer.group(1) if answer else '',
-            'filepath': filepath
-        }
-    except Exception as e:
-        print(f"解析文件失败 {filepath}: {e}")
-        return None
-
-
-def save_to_txt(message_data: dict, message_type: str, conversation_id: str = None):
-    """将消息保存为txt文件"""
-    try:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        message_id = message_data.get('message_id', str(uuid.uuid4())[:8])
-
-        # 使用会话ID作为目录
-        if conversation_id:
-            conv_dir = os.path.join(DATA_DIR, conversation_id)
-        else:
-            conv_dir = os.path.join(DATA_DIR, "default")
-
-        os.makedirs(conv_dir, exist_ok=True)
-
-        filename = f"{timestamp}_{message_type}_{message_id}.txt"
-        filepath = os.path.join(conv_dir, filename)
-
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(f"消息ID: {message_id}\n")
-            f.write(f"类型: {message_type}\n")
-            f.write(f"会话ID: {conversation_id or 'default'}\n")
-            f.write(f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-            f.write("-" * 50 + "\n")
-
-            if message_type == "question":
-                f.write(f"问题: {message_data['question']}\n")
-            elif message_type == "answer":
-                f.write(f"问题: {message_data['question']}\n")
-                f.write(f"回答: {message_data['answer']}\n")
-                f.write(f"上下文: {', '.join(message_data.get('context', []))}\n")
-
-        print(f"消息已保存: {filepath}")
-        return message_id
-    except Exception as e:
-        print(f"保存文件失败: {e}")
-        return None
-
 
 def generate_answer(question: str) -> tuple:
     """生成回答的逻辑"""
@@ -216,6 +152,68 @@ async def ask_question(request: QuestionRequest):
         print(f"处理问题出错: {str(e)}")
         raise HTTPException(status_code=500, detail=f"处理问题时出错: {str(e)}")
 
+def save_to_txt(message_data: dict, message_type: str, conversation_id: str = None):
+    """将消息保存为txt文件"""
+    try:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        message_id = message_data.get('message_id', str(uuid.uuid4())[:8])
+
+        # 使用会话ID作为目录
+        if conversation_id:
+            conv_dir = os.path.join(DATA_DIR, conversation_id)
+        else:
+            conv_dir = os.path.join(DATA_DIR, "default")
+
+        os.makedirs(conv_dir, exist_ok=True)
+
+        filename = f"{timestamp}_{message_type}_{message_id}.txt"
+        filepath = os.path.join(conv_dir, filename)
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(f"消息ID: {message_id}\n")
+            f.write(f"类型: {message_type}\n")
+            f.write(f"会话ID: {conversation_id or 'default'}\n")
+            f.write(f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write("-" * 50 + "\n")
+
+            if message_type == "question":
+                f.write(f"问题: {message_data['question']}\n")
+            elif message_type == "answer":
+                f.write(f"问题: {message_data['question']}\n")
+                f.write(f"回答: {message_data['answer']}\n")
+                f.write(f"上下文: {', '.join(message_data.get('context', []))}\n")
+
+        print(f"消息已保存: {filepath}")
+        return message_id
+    except Exception as e:
+        print(f"保存文件失败: {e}")
+        return None
+
+def parse_message_from_file(filepath):
+    """从txt文件中解析消息内容"""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # 解析文件内容
+        message_id = re.search(r'消息ID: (.+)', content)
+        message_type = re.search(r'类型: (.+)', content)
+        timestamp = re.search(r'时间: (.+)', content)
+        question = re.search(r'问题: (.+)', content)
+        # 使用 re.DOTALL 标志来匹配多行回答
+        answer = re.search(r'回答: ([\s\S]+?)(?=\n上下文:|$)', content)
+
+        return {
+            'id': message_id.group(1) if message_id else os.path.basename(filepath),
+            'type': message_type.group(1) if message_type else 'unknown',
+            'timestamp': timestamp.group(1) if timestamp else '',
+            'question': question.group(1) if question else '',
+            'answer': answer.group(1) if answer else '',
+            'filepath': filepath
+        }
+    except Exception as e:
+        print(f"解析文件失败 {filepath}: {e}")
+        return None
 
 @app.get("/api/history")
 async def get_chat_history(limit: int = 50, offset: int = 0):
@@ -360,6 +358,43 @@ async def delete_conversation(conversation_id: str):
         raise HTTPException(status_code=500, detail=f"删除会话时出错: {str(e)}")
 
 
+@app.post("/api/upload")
+async def upload_file(file: UploadFile = File(...), conversation_id: Optional[str] = None):
+    """接收上传的文件，保存到 visualization/chat_files 目录，支持 .txt 和 .csv"""
+    try:
+        # 仅允许 txt/csv
+        filename = file.filename or "uploaded_file"
+        ext = os.path.splitext(filename)[1].lower()
+        if ext not in ['.txt', '.csv']:
+            raise HTTPException(status_code=400, detail="仅支持 .txt 和 .csv 文件")
+
+        # 保存目录：与本文件同级的 chat_files 目录
+        save_dir = os.path.join(BASE_DIR, "chat_files")
+        os.makedirs(save_dir, exist_ok=True)
+
+        # 生成唯一文件名，保留扩展名
+        safe_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}{ext}"
+        save_path = os.path.join(save_dir, safe_name)
+
+        # 将上传内容写入磁盘
+        with open(save_path, 'wb') as out_file:
+            # UploadFile.file 是一个类似文件的对象
+            shutil.copyfileobj(file.file, out_file)
+
+        return {
+            "status": "success",
+            "filename": safe_name,
+            "saved_path": save_path,
+            "conversation_id": conversation_id
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"保存上传文件失败: {e}")
+        raise HTTPException(status_code=500, detail=f"保存上传文件时出错: {str(e)}")
+
+
 # 提供静态文件服务（使用绝对路径，挂载到 /static 以避免与根路由冲突）
 app.mount("/static", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 
@@ -373,5 +408,5 @@ if __name__ == "__main__":
     import uvicorn
 
     print("启动本地问答系统...")
-    print("访问地址: http://localhost:8000")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print("访问地址: http://localhost:7000")
+    uvicorn.run(app, host="0.0.0.0", port=7000)

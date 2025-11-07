@@ -240,7 +240,8 @@
 
         #questionInput {
             width: 100%;
-            padding: 16px 48px 16px 16px;
+            /* left padding increased to make room for upload button */
+            padding: 16px 48px 16px 56px;
             border: 1px solid #e5e5e7;
             border-radius: 12px;
             font-size: 16px;
@@ -257,11 +258,11 @@
             border-color: #10a37f;
             box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.1);
         }
-
+        /* 发送按钮位置 */
         .send-button {
             position: absolute;
             right: 12px;
-            bottom: 12px;
+            bottom: 20px;
             background: #10a37f;
             color: white;
             border: none;
@@ -273,6 +274,22 @@
             align-items: center;
             justify-content: center;
             transition: background-color 0.2s;
+        }
+        /* 上传按钮位置 */
+        .upload-button {
+            position: absolute;
+            left: 16px;
+            bottom: 20px;
+            background: #f3f4f6;
+            color: #333;
+            border: 1px solid #e5e5e7;
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .send-button:hover:not(:disabled) {
@@ -364,14 +381,18 @@
 
             <div class="input-area">
                 <div class="input-container">
-                    <textarea 
-                        id="questionInput" 
-                        placeholder="输入您的问题..." 
-                        rows="1"
-                    ></textarea>
-                    <button id="sendButton" class="send-button" onclick="sendQuestion()">
-                        ↑
-                    </button>
+                        <!-- 上传按钮（隐藏真实 file input） -->
+                        <input type="file" id="fileInput" accept=".txt,.csv" style="display:none" onchange="uploadFile()" />
+                        <button id="uploadButton" class="upload-button" title="上传文件(.txt/.csv)" onclick="document.getElementById('fileInput').click()">📎</button>
+
+                        <textarea 
+                            id="questionInput" 
+                            placeholder="输入您的问题..." 
+                            rows="1"
+                        ></textarea>
+                        <button id="sendButton" class="send-button" onclick="sendQuestion()">
+                            ↑
+                        </button>
                 </div>
             </div>
         </div>
@@ -668,6 +689,75 @@
                 input.value = '';
                 input.style.height = 'auto';
                 input.focus();
+            }
+        }
+
+        // 上传文件并保存到后端（visualization/chat_files）
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
+
+            const file = fileInput.files[0];
+            const allowed = ['.txt', '.csv'];
+            const ext = file.name.slice((Math.max(0, file.name.lastIndexOf('.'))));
+            if (!allowed.includes(ext.toLowerCase())) {
+                alert('仅支持 .txt 和 .csv 文件');
+                fileInput.value = '';
+                return;
+            }
+
+            const container = document.getElementById('chatContainer');
+            // 显示上传占位
+            const tempId = 'upload_' + Date.now();
+            container.innerHTML += `
+                <div class="message assistant-message" id="${tempId}">
+                    <div class="message-user">
+                        <div class="message-avatar assistant-avatar">AI</div>
+                        <div class="message-content">
+                            <div class="message-text">上传中: ${file.name}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.scrollTop = container.scrollHeight;
+
+            const formData = new FormData();
+            formData.append('file', file, file.name);
+            if (currentConversationId) {
+                formData.append('conversation_id', currentConversationId);
+            }
+
+            try {
+                const resp = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const elem = document.getElementById(tempId);
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    if (elem) {
+                        elem.innerHTML = `\n                            <div class="message-user">\n                                <div class="message-avatar assistant-avatar">AI</div>\n                                <div class="message-content">\n                                    <div class="message-text" style="color: #dc2626;">上传失败: ${resp.status} ${text}</div>\n                                </div>\n                            </div>`;
+                    }
+                    return;
+                }
+
+                const data = await resp.json();
+                if (elem) {
+                    elem.innerHTML = `\n                        <div class="message-user">\n                            <div class="message-avatar assistant-avatar">AI</div>\n                            <div class="message-content">\n                                <div class="message-text">文件上传成功: ${data.filename}</div>\n                            </div>\n                        </div>`;
+                }
+
+                // 重新加载会话列表（如果需要）
+                await loadConversations();
+
+            } catch (err) {
+                console.error('上传失败', err);
+                const elem = document.getElementById(tempId);
+                if (elem) {
+                    elem.innerHTML = `\n                        <div class="message-user">\n                            <div class="message-avatar assistant-avatar">AI</div>\n                            <div class="message-content">\n                                <div class="message-text" style="color: #dc2626;">上传失败: ${err.message}</div>\n                            </div>\n                        </div>`;
+                }
+            } finally {
+                fileInput.value = '';
             }
         }
 
