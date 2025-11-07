@@ -238,6 +238,24 @@
             position: relative;
         }
 
+        /* 设置按钮（位于输入区域外侧左侧） */
+        .settings-button {
+            position: absolute;
+            left: -48px; /* 使其位于输入框外部左侧 */
+            bottom: 20px;
+            background: #ffffff;
+            color: #333;
+            border: 1px solid #e5e5e7;
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        }
+
         #questionInput {
             width: 100%;
             /* left padding increased to make room for upload button */
@@ -291,6 +309,33 @@
             align-items: center;
             justify-content: center;
         }
+
+        /* 简单模态弹窗样式 */
+        .modal-backdrop {
+            position: fixed;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal {
+            background: white;
+            padding: 18px;
+            border-radius: 8px;
+            width: 320px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+
+        .modal h3 { margin-bottom: 8px; }
+        .modal .controls { display:flex; gap:12px; align-items:center; }
+        .modal .actions { margin-top: 12px; text-align: right; }
+        .modal .actions button { margin-left: 8px; }
 
         .send-button:hover:not(:disabled) {
             background: #0d8c6c;
@@ -381,6 +426,7 @@
 
             <div class="input-area">
                 <div class="input-container">
+            <button id="settingsButton" class="settings-button" title="设置">⚙️</button>
                         <!-- 上传按钮（隐藏真实 file input） -->
                         <input type="file" id="fileInput" accept=".txt,.csv" style="display:none" onchange="uploadFile()" />
                         <button id="uploadButton" class="upload-button" title="上传文件(.txt/.csv)" onclick="document.getElementById('fileInput').click()">📎</button>
@@ -398,9 +444,34 @@
         </div>
     </div>
 
+        <!-- 设置模态弹窗 -->
+        <div id="modalBackdrop" class="modal-backdrop">
+            <div class="modal">
+                <h3>调整 TopK（0.0 - 1.0）</h3>
+                <div style="font-size:13px;color:#666;margin-bottom:8px;">滑块步进 0.1，当前值: <span id="topkDisplay">0.5</span></div>
+                <div class="controls">
+                    <input id="topkSlider" type="range" min="0" max="1" step="0.1" value="0.5" style="flex:1" oninput="updateSliderDisplay(this.value)" />
+                </div>
+                <div class="actions">
+                    <button onclick="closeSettings()">取消</button>
+                    <button onclick="saveSettings()">保存</button>
+                </div>
+            </div>
+        </div>
+
     <script>
         const API_BASE = '/api';
         let currentConversationId = null;
+        // topk 当前值（0.0 - 1.0），默认为 0.5
+        let currentTopK = parseFloat(localStorage.getItem('topk')) || 0.5;
+        // 页面加载时更新显示
+        document.addEventListener('DOMContentLoaded', function() {
+            // ensure modal display shows currentTopK
+            const disp = document.getElementById('topkDisplay');
+            if (disp) disp.textContent = currentTopK.toFixed(1);
+            const slider = document.getElementById('topkSlider');
+            if (slider) slider.value = currentTopK;
+        });
         let conversations = [];
 
         // 初始化
@@ -423,6 +494,39 @@
                 this.style.height = 'auto';
                 this.style.height = Math.min(this.scrollHeight, 120) + 'px';
             });
+        }
+
+        // 打开设置弹窗
+        document.getElementById('settingsButton').addEventListener('click', function() {
+            openSettings();
+        });
+
+        function openSettings() {
+            const backdrop = document.getElementById('modalBackdrop');
+            const slider = document.getElementById('topkSlider');
+            const disp = document.getElementById('topkDisplay');
+            if (slider) slider.value = currentTopK;
+            if (disp) disp.textContent = parseFloat(currentTopK).toFixed(1);
+            if (backdrop) backdrop.style.display = 'flex';
+        }
+
+        function closeSettings() {
+            const backdrop = document.getElementById('modalBackdrop');
+            if (backdrop) backdrop.style.display = 'none';
+        }
+
+        function updateSliderDisplay(val) {
+            const disp = document.getElementById('topkDisplay');
+            if (disp) disp.textContent = parseFloat(val).toFixed(1);
+        }
+
+        function saveSettings() {
+            const slider = document.getElementById('topkSlider');
+            if (!slider) return;
+            currentTopK = parseFloat(slider.value);
+            // 存本地
+            localStorage.setItem('topk', currentTopK.toFixed(1));
+            closeSettings();
         }
 
         // 开始新对话
@@ -631,6 +735,8 @@
                 if (currentConversationId) {
                     requestData.conversation_id = currentConversationId;
                 }
+                // 添加 topk 值
+                requestData.topk = currentTopK;
 
                 console.log('发送请求数据:', requestData);
 

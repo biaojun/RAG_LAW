@@ -38,6 +38,7 @@ os.makedirs(STATIC_DIR, exist_ok=True)
 class QuestionRequest(BaseModel):
     question: str
     conversation_id: Optional[str] = None
+    topk: Optional[float] = None
 
 
 class QuestionResponse(BaseModel):
@@ -113,11 +114,12 @@ async def ask_question(request: QuestionRequest):
         conversation_id = request.conversation_id or str(uuid.uuid4())[:8]
         print(f"使用的会话ID: {conversation_id}")
 
-        # 保存问题到txt文件
+        # 保存问题到txt文件（包含 topk 可选字段）
         question_data = {
             "question": request.question,
             "message_id": message_id,
-            "timestamp": timestamp
+            "timestamp": timestamp,
+            "topk": getattr(request, 'topk', None)
         }
         save_to_txt(question_data, "question", conversation_id)
 
@@ -142,7 +144,8 @@ async def ask_question(request: QuestionRequest):
             "answer": answer,
             "context": context,
             "message_id": message_id,
-            "timestamp": timestamp
+            "timestamp": timestamp,
+            "topk": getattr(request, 'topk', None)
         }
         save_to_txt(answer_data, "answer", conversation_id)
 
@@ -178,10 +181,17 @@ def save_to_txt(message_data: dict, message_type: str, conversation_id: str = No
 
             if message_type == "question":
                 f.write(f"问题: {message_data['question']}\n")
+                # 若存在 topk，则记录
+                if message_data.get('topk') is not None:
+                    f.write(f"topk: {message_data.get('topk')}\n")
             elif message_type == "answer":
                 f.write(f"问题: {message_data['question']}\n")
                 f.write(f"回答: {message_data['answer']}\n")
                 f.write(f"上下文: {', '.join(message_data.get('context', []))}\n")
+                # 若存在 topk，则记录
+                if message_data.get('topk') is not None:
+                    f.write(f"topk: {message_data.get('topk')}\n")
+                
 
         print(f"消息已保存: {filepath}")
         return message_id
