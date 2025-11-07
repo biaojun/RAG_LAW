@@ -1,0 +1,164 @@
+[
+  {
+    "user_input": "Can you provide details about the environmental compliance case involving the 白山市江源区中医院 and what legal risks were managed in this administrative oversight matter?",
+    "reference_contexts": [
+      "案件名称: 指导案例136号：吉林省白山市人民检察院诉白山市江源区卫生和计划生育局、白山市江源区中医院环境公益诉讼案\n案件类别: 行政\n涉嫌罪名: XX（行政行为）公益诉讼\n判决日期: 2016-07-15 00:00:00\n\n【"
+    ],
+    "reference": "The case is titled '指导案例136号：吉林省白山市人民检察院诉白山市江源区卫生和计划生育局、白山市江源区中医院环境公益诉讼案'. It is an administrative case involving an environmental public interest lawsuit, with a judgment date of July 15, 2016.",
+    "synthesizer_name": "single_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "What are the legal issues involving 江源区中医院 and the 江源区卫生和计划生育局 regarding their public service duties?",
+    "reference_contexts": [
+      "案件事实】\n 白山市江源区中医院新建综合楼时，未建设符合环保要求的污水处理设施即投入使用。吉林省白山市人民检察院发现该线索后，进行了调查。调查发现白山市江源区中医院通过渗井、渗坑排放医疗污水。经对其排放的医疗污水及渗井周边土壤取样检验，化学需氧量、五日生化需氧量、悬浮物、总余氯等均超过国家标准。还发现白山市江源区卫生和计划生育局在白山市江源区中医院未提交环评合格报告的情况下，对其《医疗机构职业许可证》校验为合格，且对其违法排放医疗污水的行为未及时制止，存在违法行为。检察机关在履行了提起公益诉讼的前置程序后，诉至法院，请求：1.确认被告白山市江源区卫生和计划生育局于2015年5月18日为第三人白山市江源区中医院校验《医疗机构执业许可证》的行为违法；2.判令白山市江源区卫生和计划生育局履行法定监管职责，责令白山市江源区卫生和计划生育局限期对白山市江源区中医院的医疗污水净化处理设施进行整改；3.判令白山市江源区中医院立即停止违法排放医疗污水。\n\n【"
+    ],
+    "reference": "白山市江源区中医院新建综合楼时，未建设符合环保要求的污水处理设施即投入使用，并通过渗井、渗坑排放医疗污水，其排放的污水中化学需氧量、五日生化需氧量、悬浮物、总余氯等均超过国家标准。白山市江源区卫生和计划生育局在白山市江源区中医院未提交环评合格报告的情况下，对其《医疗机构职业许可证》校验为合格，且对其违法排放医疗污水的行为未及时制止，存在违法行为。",
+    "synthesizer_name": "single_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "What are the legal issues involving 白山市江源区中医院 regarding its environmental compliance?",
+    "reference_contexts": [
+      "判决理由】 法院生效裁判认为，根据国务院《医疗机构管理条例》第五条及第四十条的规定，白山市江源区卫生和计划生育局对辖区内医疗机构具有监督管理的法定职责。《吉林省医疗机构审批管理办法（试行）》第四十四条规定，医疗机构申请校验时应提交校验申请、执业登记项目变更情况、接受整改情况、环评合格报告等材料。白山市江源区卫生和计划生育局在白山市江源区中医院未提交环评合格报告的情况下，对其《医疗机构职业许可证》校验为合格，违反上述规定，该校验行为违法。白山市江源区中医院违法排放医疗污水，导致周边地下水及土壤存在重大污染风险。白山市江源区卫生和计划生育局作为卫生行政主管部门，未及时制止，其怠于履行监管职责的行为违法。白山市江源区中医院通过渗井、渗坑违法排放医疗污水，且污水处理设施建设完工及环评验收需要一定的时间，故白山市江源区卫生和计划生育局应当继续履行监管职责，督促白山市江源区中医院污水处理工程及时完工，达到环评要求并投入使用，符合《吉林省医疗机构审批管理办法（试行）》第四十四条规定的校验医疗机构执业许可证的条件。 《中华人民共和国侵权责任法》第六十五条、第六十六条规定，因污染环境造成损害的，污染者应当承担侵权责任。因污染环境发生纠纷，污染者应当就法律规定的不承担责任或者减轻责任的情形及其行为与损害之间不存在因果关系承担举证责任。本案中，根据公益诉讼人的举证和查明的相关事实，可以确定白山市江源区中医院未安装符合环保要求的污水处理设备，通过渗井、渗坑实施了排放医疗污水的行为。从检测机构的检测结果及检测意见可知，其排放的医疗污水，对附近地下水及周边土壤存在重大环境污染风险。白山市江源区中医院虽辩称其未建设符合环保要求的排污设备系因政府对公办医院投入建设资金不足所致，但该理由不能否定其客观上实施了排污行为，产生了周边地下水及土壤存在重大环境污染风险的损害结果，以及排污行为与损害结果存在因果关系的基本事实。且环境污染具有不可逆的特点，故作出立即停止违法排放医疗污水的判决。"
+    ],
+    "reference": "白山市江源区中医院未提交环评合格报告，却获得了《医疗机构职业许可证》的合格校验，这一行为违法。该医院通过渗井、渗坑违法排放医疗污水，导致周边地下水及土壤存在重大污染风险。虽然医院辩称未建设符合环保要求的排污设备是因政府对公办医院投入建设资金不足所致，但这不能否定其客观上实施了排污行为，产生了重大环境污染风险，且排污行为与损害结果存在因果关系。法院判决其立即停止违法排放医疗污水，并要求白山市江源区卫生和计划生育局继续履行监管职责，督促医院污水处理工程及时完工，达到环评要求并投入使用。",
+    "synthesizer_name": "single_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "As a network administrator for the state, I needs to know what the 人民法院 do when there is environmental lawsuits from the procuratorate?",
+    "reference_contexts": [
+      "【 裁判要旨】\n 人民法院在审理人民检察院提起的环境行政公益诉讼案件时，对人民检察院就同一污染环境行为提起的环境民事公益诉讼，可以参照行政诉讼法及其司法解释规定，采取分别立案、一并审理、分别判决的方式处理。\n\n【 关键词】\n行政, 环境行政公益诉讼, 环境民事公益诉讼, 分别立案, 一并审理\n\n【 相关法律】\n中华人民共和国行政诉讼法 第61条"
+    ],
+    "reference": "人民法院在审理人民检察院提起的环境行政公益诉讼案件时，对人民检察院就同一污染环境行为提起的环境民事公益诉讼，可以参照行政诉讼法及其司法解释规定，采取分别立案、一并审理、分别判决的方式处理。",
+    "synthesizer_name": "single_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "What is 受贿罪?",
+    "reference_contexts": [
+      "案件名称: 吕某受贿案\n案件类别: 刑事\n涉嫌罪名: 受贿罪\n判决日期: 2012-02-10 00:00:00\n\n【"
+    ],
+    "reference": "受贿罪 is the suspected crime in the criminal case of 吕某受贿案.",
+    "synthesizer_name": "single_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "As an Environmental Compliance Officer, I need to understand the legal implications of employment status in state-owned institutions for risk assessment. Can you provide details about the case involving the defendant Lü, specifically focusing on the events that began in 2004年5月, his employment status, and the subsequent legal proceedings?",
+    "reference_contexts": [
+      "案件事实】\n 2004年5月，被告人吕某进入上海市虹口区新港社区卫生服务中心担任网络管理员（系临时工），2008年8月转为正式职工。2009年12月，新港卫生服务中心并入嘉兴卫生服务中心，吕某继续担任合并后的嘉兴卫生服务中心的网络管理员。上述两家社区卫生服务中心的性质均系上海市虹口区卫生局差额拨款的国有事业单位。2006年至2010年，吕某利用担任上述两家单位网络管理员的职务便利，在负责为本单位采购计算机及相关配件的业务中，多次收受供货单位给予的贿赂，共计人民币14.47万元（币种下同）；在负责管理本单位医药信息的过程中，多次擅自对外提供医生药品用量等信息并收受医药销售代表给予的贿赂，共计2.35万元。2011年4月19日，吕某主动投案，并如实供述上述受贿犯罪事实。到案后，吕某主动向有关部门检举揭发他人犯罪行为。吕某主动退赃10万元。 上海市虹口区人民法院于2011年11月30日作出（2011）虹刑初字第668号刑事判决：被告人吕某犯受贿罪，判处有期徒刑六年，并处没收财产人民币二万元。 宣判后，被告人吕某不服，提出上诉，辩称其2004年5月进入新港卫生服务中心工作时仅是临时工，不具有国家工作人员身份，直到2008年8月才成为正式职工，而大部分受贿行为发生于其成为正式职工之前，故不构成受贿罪，而应构成非国家工作人员受贿罪。上海市第二中级人民法院于2012年2月10日作出（2012）沪二中刑终字第49号刑事裁定：驳回上诉，维持原判。\n\n【"
+    ],
+    "reference": "In 2004年5月, the defendant Lü entered the Shanghai Hongkou District Xingang Community Health Service Center as a network administrator (a temporary worker). In 2008年8月, he became a formal employee. The nature of both the Xingang Community Health Service Center and the later merged Jiaxing Community Health Service Center was that of state-owned institutions with differential funding from the Shanghai Hongkou District Health Bureau. From 2006 to 2010, Lü used his position as a network administrator for these two units to accept bribes totaling 144,700 RMB from suppliers during procurement and 23,500 RMB from pharmaceutical sales representatives for providing doctor's drug usage information. On April 19, 2011, Lü voluntarily surrendered and truthfully confessed to the bribery crimes. After being apprehended, he actively reported other criminal acts and returned 100,000 RMB in illicit gains. The Shanghai Hongkou District People's Court rendered a judgment on November 30, 2011, sentencing Lü to six years in prison for accepting bribes and confiscating property worth 20,000 RMB. Lü appealed, arguing that he was only a temporary worker when he started in 2004年5月 and did not have the status of a state employee until 2008, and since most of the bribery occurred before he became a formal employee, he should be convicted of non-state functionary bribery instead. The Shanghai No. 2 Intermediate People's Court issued a ruling on February 10, 2012, rejecting the appeal and upholding the original judgment.",
+    "synthesizer_name": "single_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "As a 网络管理员 working for a state-owned health center, what are the legal risks and boundaries I should be aware of regarding my duties, especially in procurement and handling data, to avoid being considered a state工作人员 and facing charges like bribery?",
+    "reference_contexts": [
+      "判决理由】\n 法院生效裁判认为：根据刑法第九十三条的规定，国家工作人员的本质特征是从事公务。据此，认定是否属于国家工作人员应当以是否从事公务为依据。本案中，被告人吕某任职的新港卫生服务中心和嘉兴卫生服务中心系国有事业单位，其在卫生服务中心负责采购计算机及其设备，以及对卫生服务中心的网络信息进行维护，并及时向院办公室汇报，并确保统计数据的真实性、安全性和保密性。可见，吕某在事业单位中履行对国有资产的管理、公共事务的监督职责，从事的活动具有公务性质，应当认定为国家工作人员。而且，吕某利用其网络管理员的职务便利，收受供货单位相关人员以及医药销售代表给予的财物，并在采购计算机及配件和提供医生药品用量信息等方面为他人谋取利益。因此，吕某基于其职务行为获取了不正当的报酬，依法构成受贿罪。故法院依法作出如上裁判。\n\n【 裁判要旨】\n 国家工作人员的本质特征是从事公务，至于行为人的身份是临时工还是正式职工，不影响对国家工作人员的认定。\n\n【 关键词】\n刑事, 受贿罪, 国家工作人员, 从事公务, 临时工\n\n【"
+    ],
+    "reference": "According to the court's effective judgment, a 网络管理员 (network administrator) working in a state-owned health center, such as the defendant Lü in this case, is considered a state工作人员 (state worker) if their duties involve从事公务 (engaging in public service). This includes managing state-owned assets, supervising public affairs, procuring computers and equipment, maintaining network information, reporting to the office, and ensuring the authenticity, security, and confidentiality of statistical data. If a 网络管理员 uses their position to accept money or property from suppliers, such as for computer procurement or providing drug usage information, and seeks benefits for others, it constitutes bribery and can lead to a conviction for受贿罪 (accepting bribes). The key factor is whether the activities are公务性质 (public service in nature), regardless of whether the person is a临时工 (temporary worker) or正式职工 (permanent employee).",
+    "synthesizer_name": "single_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "What is the legal scope and risks associated with 第385条 for a public network administrator?",
+    "reference_contexts": [
+      "相关法律】\n中华人民共和国刑法 第93、385条"
+    ],
+    "reference": "The context references the legal framework of the Criminal Law of the People's Republic of China, specifically Articles 93 and 385.",
+    "synthesizer_name": "single_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "What is the role of 重庆某文化传播有限公司 in the \"Moonlight City\" bookstore transfer agreement?",
+    "reference_contexts": [
+      "案件事实】 原告重庆某文化产业发展有限公司（以下简称某文化公司）诉称：2020年1月3日，某文化公司、重庆某物业管理有限公司（以下简称某物业公司）及案外人重庆某商业管理有限公司（以下简称某商业公司）、重庆某文化传播有限公司（以下简称某传播公司）、袁某某、重庆某文化发展有限公司（以下简称某发展公司）、成某某共同签订《月光之城\"南之山小宇宙书店\"转让协议书》（以下简称《转让协议》），约定袁某某、某传播公司共同作为甲方将案涉书店转让给某文化公司，某文化公司向某物业公司支付案涉书店从2019年2月13日至2019年11月13日产生的水电费144319.44元。某文化公司基于《转让协议》确定受让案涉书店，故支付了约定的水电费。2020年7月，某物业公司及某传播公司、袁某某、某商业公司单方解除了《转让协议》。请求法院判令：某物业公司向某文化公司退还水电费144319.44元并支付资金占用损失。 被告某物业公司辩称：某文化公司未按约定履行给付义务，某物业公司解除《转让协议》合法有效。案涉水电费非因受让书店原因支付，属于某文化公司在实际经营期间应缴纳的款项。根据《转让协议》约定，某文化公司完全知晓该支付义务，且已放弃异议权利。 法院经审理查明：2020年1月3日，袁某某、某传播公司作为甲方（转让方），某文化公司作为乙方（受让方），案外人成某某、案外人某发展公司作为丙方（担保方），某商业公司作为丁方，某物业公司作为戊方，共同签订《转让协议》，约定：乙方按照本协议的约定履行相关受让目标店的相关义务。乙方在2020年2月29日前将目标店的整体资产转让款300万元支付给甲方。乙方逾期支付时间超过三个月的，视为乙方严重违约，甲方和某商业公司有权立即终止本协议和《商业租赁合同》的履行。乙方在2020年2月29日前，向某物业公司支付目标店从2019年2月13日至2019年11月13日产生的水电费144319.44元。乙方在2020年2月19日前未向甲方足额支付目标店转让款或未向某物业公司足额支付水电费，且逾期时间超过三个月的，甲方和某商业公司有权立即终止本协议和《商业租赁合同》并强制收回目标店全部资产，包括采取强制停止供应水电的方式，乙方不得就此提出任何异议。 2020年3月2日，某文化公司向某物业公司转账支付144 319.44元，并备注：南之山水电费。"
+    ],
+    "reference": "In the \"Moonlight City 'South Mountain Small Universe Bookstore' Transfer Agreement\" signed on January 3, 2020, 重庆某文化传播有限公司 (referred to as 某传播公司) is one of the parties acting collectively as Party A (the transferor), along with Yuan Moumou, transferring the subject bookstore to the plaintiff, 重庆某文化产业发展有限公司 (the transferee).",
+    "synthesizer_name": "single_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "As an Environmental Compliance Officer, I needs to know about the legal case involving 成某某, like what was the dispute about and what was the final outcome for them, because I gotta understand the legal risks and administrative oversight stuff, you know?",
+    "reference_contexts": [
+      "案件名称: 重庆某文化产业发展有限公司诉重庆某物业管理有限公司合同纠纷案\n案件类别: 民事\n涉嫌罪名: 合同纠纷\n判决日期: 2022-03-03 00:00:00\n\n【 2020年7月6日，某商业公司、袁某某、某传播公司、某物业公司共同向某文化公司、成某某、某发展公司发出解除合同通知书，称：\"从签订《转让协议》至今，贵方未支付转让款和拖欠的水电费，逾期时间已达四个多月，且未支付因使用场地的抽成租金。因贵方的严重违约行为，我方有权立即终止与贵方签订的《转让协议》《月光之城商业租赁合同》《物业服务合同》，强制收回资产，贵方不得提出任何异议……\"某文化公司于2020年7月8日收到该解除通知书。双方确认，案涉转让协议及相关附件于2020年7月16日解除。 重庆市渝北区人民法院于2021年9月2日作出（2021）渝0112民初14020号民事判决：某物业公司返还某文化公司已支付的水电费144319.44元并支付资金占用损失。宣判后，某物业公司提起上诉。重庆市第一中级人民法院于2022年3月3日作出（2021）渝01民终12806号民事判决：撤销一审判决，驳回某文化公司的诉讼请求。 【"
+    ],
+    "reference": "In the case, a commercial company, Yuan Mou Mou, a communication company, and a property management company jointly issued a contract termination notice to a cultural company, Cheng Mou Mou, and a development company. The notice stated that from the signing of the \"Transfer Agreement\" until then, the receiving party had not paid the transfer payment and overdue water and electricity fees, with the delay exceeding four months, and had also not paid the percentage rent for using the venue. Due to this serious breach, the issuing party claimed the right to immediately terminate the \"Transfer Agreement,\" \"Moonlight City Commercial Lease Contract,\" and \"Property Service Contract,\" and to forcibly reclaim the assets, with the receiving party not allowed to raise any objections. The cultural company received this termination notice on July 8, 2020. Both parties confirmed that the involved transfer agreement and related appendices were terminated on July 16, 2020. The Chongqing Yubei District People's Court made a first-instance judgment on September 2, 2021, ordering the property company to return the water and electricity fees already paid by the cultural company, totaling 144,319.44 yuan, and to pay for the loss of fund usage. After the judgment was announced, the property company appealed. The Chongqing First Intermediate People's Court made a second-instance judgment on March 3, 2022, which revoked the first-instance judgment and dismissed the cultural company's litigation claims.",
+    "synthesizer_name": "single_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "As a state-employed network administrator involved in public service procurement, what are the legal boundaries and risks associated with accepting bribes (受贿), and how does the case of Zhang's embezzlement, bribery, and abuse of authority in a state-owned institution illustrate these consequences?",
+    "reference_contexts": [
+      "<1-hop>\n\n案件名称: 张某贪污、受贿、国有事业单位人员滥用职权案\n案件类别: 刑事\n涉嫌罪名: 贪污罪\n判决日期: 2019-08-26 00:00:00\n\n【"
+    ],
+    "reference": "The case of Zhang's embezzlement, bribery (受贿), and abuse of authority in a state-owned institution demonstrates that accepting bribes is a criminal offense, specifically categorized under bribery charges, and such actions in public service roles can lead to legal prosecution, as evidenced by the judgment dated August 26, 2019.",
+    "synthesizer_name": "multi_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "As a Commercial Litigation Attorney, can you explain why the court determined that the labor relationship between Liao and the labor dispatch company existed up until June 15, 2009, even though the contract said it ended on May 25, 2009?",
+    "reference_contexts": [
+      "<1-hop>\n\n判决理由】\n 法院生效裁判认为：2009年4月，廖某到某劳务派遣公司承包的某宾馆改造项目工程从事3、4、5号楼模板加工制作工作，虽然某劳务派遣公司与中铁某公司签订的《劳务承包合同补充协议》（二）约定，某劳务派遣公司改造项目工程工期至2009年5月25日结束，但廖某提供的证人证言、出勤记录、施工记录等证据证明该工程在2009年6月15日尚未竣工，某劳务派遣公司应就其与中铁某公司签订的《劳务承包合同补充协议》（二）的履行情况提供证据加以证明，而某劳务派遣公司未提供证据证明该工程系在其与中铁某公司签订的《劳务承包合同补充协议》（二）中约定的工期内竣工，故某劳务派遣公司应承担举证不利的法律后果。根据《最高人民法院关于民事诉讼证据的若干规定》第七十五条关于\"有证据证明一方当事人持有证据无正当理由拒不提供，如果对方当事人主张该证据的内容不利于证据持有人，可以推定该主张成立\"的规定，应认定廖某与某劳务派遣公司之间自2009年4月至2009年6月15日期间存在劳动关系。原判认定事实不清，判决不当，予以纠正。廖某的上诉理由成立，予以支持。\n\n【",
+      "<2-hop>\n\n案件事实】 原告廖某诉称：2009年4月，原告进入被告某劳务派遣公司承建的某宾馆改造项目（一期工程）从事木工工作，未签订劳动合同。2009年6月15日，原告在下班途中驾驶摩托车并搭乘同在该工地上班的妻子，与一轿车相撞发生交通事故受伤。原告廖某就与被告某劳务派遣公司是否存在劳动关系问题，于2010年4月向劳动部门申请仲裁，劳动部门作出的仲裁裁决书与客观事实不符。原告诉请人民法院确认原告自2009年4月至2009年6月15日（原告受伤时）期间与被告存在事实劳动关系。 被告某劳务派遣公司辩称，原、被告之间未签订劳动合同，不存在事实劳动关系，故请求驳回原告的诉讼请求。 法院经审理查明：2008年初，中铁某公司承建某宾馆改造项目（一期工程）。2008年12月22日，中铁某公司与某劳务派遣公司签订《劳务承包合同》，约定由某劳务派遣公司承包\"某宾馆改造项目（一期工程）1号楼的模板制作安装工程（其具体施工范围以甲方根据现场实际安排的施工范围为准）\"，该合同劳务定于2008年12月28日开始，2009年1月21日结束。2009年3月15日，双方又根据工程的实际情况签订《劳务承包合同补充协议》（二），约定由某劳务派遣公司承包\"某宾馆改造项目（一期工程）3、4、5号楼的模板制作安装工程及1、2、3、4、5号楼的垂直封闭脚手架工程\"，该合同劳务定于2009年3月25日开始，2009年5月25日结束。2009年4月，廖某到该宾馆从事3、4、5号楼的模板加工制作工作。2009年6月15日18时40分，廖某驾驶二轮摩托车与一轿车相撞，致廖某受伤。2009年12月16日，廖某向自贡市仲裁委申请仲裁，要求确认其与中铁某公司之间存在劳动关系。自贡市仲裁委于2010年3月2日裁决廖某与中铁某公司之间不存在劳动关系。后廖某于2010年5月5日又向自贡市仲裁委申诉，自贡市仲裁委于2010年7月22日作出自劳仲案字〔2010〕第210号仲裁裁决，裁决廖某与某劳务派遣公司在2009年4月至2009年5月25日期间双方存在劳动关系。后廖某不服仲裁裁决，向法院提起诉讼。一、二审期间，某劳务派遣公司均未向法院提交2009年3月15日《劳务承包合同补充协议》（二）实际履行情况的证据。"
+    ],
+    "reference": "The court determined that the labor relationship existed until June 15, 2009, because Liao provided evidence, such as witness testimony, attendance records, and construction records, proving the project was not completed by that date. The labor dispatch company, which held the evidence regarding the fulfillment of the 'Labor Contract Supplement Agreement (II)' that stipulated a completion date of May 25, 2009, failed to provide this evidence to prove the project was finished within the agreed period. Consequently, under Article 75 of the 'Supreme People's Court's Several Provisions on Evidence in Civil Procedures,' the court presumed Liao's claim was valid, establishing the labor relationship from April 2009 to June 15, 2009.",
+    "synthesizer_name": "multi_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "Why was the original Securities Law of the People's Republic of China, rather than the 2019 revision, applied to review the legality of the penalty decision against Jiang Moufen for market manipulation?",
+    "reference_contexts": [
+      "<1-hop>\n\n判决理由】 根据《中华人民共和国行政诉讼法》第六条的规定，人民法院审理行政案件，对行政行为合法性进行审查。全国人民代表大会常务委员会2019年12月28日修订了《中华人民共和国证券法》（以下简称2019年证券法）。2019年证券法已自2020年3月1日起施行。广东证监会2021年5月7日对江某芬于2016年6月至2018年7月期间操纵证券市场的行为作出被诉处罚决定。该违法行为发生时实施的证券法是全国人民代表大会常务委员会于2014年8月31日修正的原证券法。同时，针对操纵市场违法行为，原证券法第二百零三条设定的行政处罚比2019年证券法第一百九十二条设定的行政处罚更轻。故对本案被诉处罚决定合法性的审查应当依据原证券法，而不是2019年证券法。 根据原证券法第七条、第一百七十九条第一款第七项的规定，证监会具有作出被诉处罚决定的法定职权。 根据前述法律规定，结合双方当事人的诉辩主张，本案的争议焦点为：第一，被诉处罚决定认定江某芬存在操纵市场的违法行为是否合法的问题。第二，江某芬的行为是否对股票市场造成了影响的问题。第三，广东证监局对江某芬的处罚幅度是否恰当的问题。"
+    ],
+    "reference": "The original Securities Law of the People's Republic of China was applied because the market manipulation occurred between June 2016 and July 2018, when the original law was in effect. Furthermore, the penalty for market manipulation under Article 203 of the original law was lighter than the penalty under Article 192 of the 2019 Securities Law, and the legality of the administrative penalty decision must be reviewed based on the law in force at the time of the violation.",
+    "synthesizer_name": "multi_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "In the contractual dispute involving the \"Moonlight City 'Nanzhishan Little Universe Bookstore' Transfer Agreement\", what was the role of 重庆某文化传播有限公司 as a party to the agreement, and what specific payment obligation related to the bookstore's utility fees did the plaintiff, 重庆某文化产业发展有限公司, fulfill according to the terms?",
+    "reference_contexts": [
+      "<1-hop>\n\n案件事实】 原告重庆某文化产业发展有限公司（以下简称某文化公司）诉称：2020年1月3日，某文化公司、重庆某物业管理有限公司（以下简称某物业公司）及案外人重庆某商业管理有限公司（以下简称某商业公司）、重庆某文化传播有限公司（以下简称某传播公司）、袁某某、重庆某文化发展有限公司（以下简称某发展公司）、成某某共同签订《月光之城\"南之山小宇宙书店\"转让协议书》（以下简称《转让协议》），约定袁某某、某传播公司共同作为甲方将案涉书店转让给某文化公司，某文化公司向某物业公司支付案涉书店从2019年2月13日至2019年11月13日产生的水电费144319.44元。某文化公司基于《转让协议》确定受让案涉书店，故支付了约定的水电费。2020年7月，某物业公司及某传播公司、袁某某、某商业公司单方解除了《转让协议》。请求法院判令：某物业公司向某文化公司退还水电费144319.44元并支付资金占用损失。 被告某物业公司辩称：某文化公司未按约定履行给付义务，某物业公司解除《转让协议》合法有效。案涉水电费非因受让书店原因支付，属于某文化公司在实际经营期间应缴纳的款项。根据《转让协议》约定，某文化公司完全知晓该支付义务，且已放弃异议权利。 法院经审理查明：2020年1月3日，袁某某、某传播公司作为甲方（转让方），某文化公司作为乙方（受让方），案外人成某某、案外人某发展公司作为丙方（担保方），某商业公司作为丁方，某物业公司作为戊方，共同签订《转让协议》，约定：乙方按照本协议的约定履行相关受让目标店的相关义务。乙方在2020年2月29日前将目标店的整体资产转让款300万元支付给甲方。乙方逾期支付时间超过三个月的，视为乙方严重违约，甲方和某商业公司有权立即终止本协议和《商业租赁合同》的履行。乙方在2020年2月29日前，向某物业公司支付目标店从2019年2月13日至2019年11月13日产生的水电费144319.44元。乙方在2020年2月19日前未向甲方足额支付目标店转让款或未向某物业公司足额支付水电费，且逾期时间超过三个月的，甲方和某商业公司有权立即终止本协议和《商业租赁合同》并强制收回目标店全部资产，包括采取强制停止供应水电的方式，乙方不得就此提出任何异议。 2020年3月2日，某文化公司向某物业公司转账支付144 319.44元，并备注：南之山水电费。"
+    ],
+    "reference": "In the \"Moonlight City 'Nanzhishan Little Universe Bookstore' Transfer Agreement\", 重庆某文化传播有限公司 (referred to as 某传播公司) was a party to the agreement, acting as one of the transferors (甲方) alongside Yuan Moumou. The plaintiff, 重庆某文化产业发展有限公司 (referred to as 某文化公司), as the transferee (乙方), was obligated under the agreement to pay the utility fees for the target bookstore. Specifically, the agreement required 某文化公司 to pay 144,319.44 yuan to 某物业公司 for water and electricity fees incurred from February 13, 2019, to November 13, 2019. On March 2, 2020, 某文化公司 fulfilled this obligation by transferring 144,319.44 yuan to 某物业公司, with a note indicating it was for \"Nanzhishan water and electricity fees\".",
+    "synthesizer_name": "multi_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "Why did the appellate court find the 一审法院's handling of punitive damages in the Liaoning seed company case legally erroneous?",
+    "reference_contexts": [
+      "<1-hop>\n\n案件名称: 辽宁某种业科技公司诉凌海某种业科技公司、青岛某农技公司侵害植物新品种权纠纷案\n案件类别: 民事\n涉嫌罪名: 植物新品种权权属、侵权纠纷\n判决日期: 2023-10-08 00:00:00\n\n【 【 一审判决在已经认定凌海某种业科技公司存在侵权故意且侵权情节严重，且辽宁某种业科技公司已经提交涉及赔偿基数的证据且具备裁量确定惩罚性赔偿基数条件的情况下，仍然以无法确定赔偿基数为由对辽宁某种业科技公司的惩罚性赔偿请求不予支持，适用法律错误。上述做法对权利人的惩罚性赔偿请求的举证责任苛责过高，纵容了侵权人逃避侵权赔偿责任，不利于保护权利人的合法权益，不利于有力打击侵权者。一审法院对辽宁某种业科技公司主张的150万的赔偿基数以及一倍的惩罚性赔偿不予支持，存在不当，对此予以纠正，并按照150万元的赔偿基数及1倍的惩罚性赔偿，全额支持辽宁某种业科技公司关于凌海某种业科技公司赔偿其经济损失及合理开支共计300万元的诉讼请求。 【 裁判要旨】\n 虽然惩罚性赔偿需要以确定的赔偿基数为前提，但是对于赔偿基数的计算精度不宜作过于严苛的要求，可以根据现有证据裁量确定合理的赔偿基数。\n\n【",
+      "<2-hop>\n\n二、关于一审判决是否应明确成都某某公司享有追偿权的问题。（2019）陕民初16号民事判决本院认为部分已明确成都某某公司承担责任后，有权向主债务人某丙西南分公司、某丙总公司追偿，但并未在判决主文中明确该项权利。根据《中华人民共和国担保法》第三十一条关于\"保证人承担保证责任后，有权向债务人追偿\"的规定以及《最高人民法院关于适用〈中华人民共和国担保法〉若干问题的解释》第四十二条关于\"人民法院判决保证人承担保证责任或者赔偿责任的，应当在判决书主文中明确保证人享有担保法第三十一条规定的权利\"的规定，一审判决未在判决主文明确成都某某公司的追偿权有所不当，本院对此予以纠正，成都某某公司的该项上诉请求应得到支持。 三、某丙西南分公司、某丙总公司在本案诉讼地位的问题，即应为本案一审第三人还是一审被告的问题。某乙公司在一审起诉时，将某丙西南分公司、某丙总公司列为第三人，后一审法院将二公司作为一审被告。根据《最高人民法院关于适用〈中华人民共和国担保法〉若干问题的解释》第一百二十五条的规定，一审法院可以将债务人和保证人列为共同被告。一审中，某乙公司将一般保证人成都某某公司作为被告起诉，成都某某公司享有一般保证人的先诉抗辩权，其抗辩权的主张有赖于主债务人的抗辩权。故，一审法院将某丙西南分公司、某丙总公司作为本案被告有法律依据。因此，成都某某公司关于某丙西南分公司、某丙总公司在本案诉讼地位的请求，亦不应得到支持。 【"
+    ],
+    "reference": "The appellate court found the 一审法院's handling legally erroneous because, despite recognizing the defendant's intentional infringement and severe circumstances, and despite the plaintiff providing evidence related to the compensation base which was sufficient for discretionary determination, the 一审法院 still rejected the punitive damages request on the grounds that the compensation base could not be determined. This was an incorrect application of law, as it placed an excessively high burden of proof on the rights holder regarding punitive damages, tolerated the infringer's evasion of liability, and was detrimental to protecting the rights holder's legitimate interests and effectively combating infringers.",
+    "synthesizer_name": "multi_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "How did the defendants in the case handled by the Shanghai Putuo District People's Court exploit a ride-hailing platform's policies to commit fraud, and what were the specific legal consequences for their actions?",
+    "reference_contexts": [
+      "<1-hop>\n\n案件事实】\n 被告人董某、谈某贤、高某、宋某华系某网约车平台注册登记司机。2015年始至案发，四名被告人购买未实名登记的手机号注册网约车乘客端，并在乘客端账户内预充少量打车费，随后各自虚构用车订单，并用本人或其实际控制的其他司机端账户接单，发起较短距离用车需求，后又故意变更目的地延长乘车距离，致使应付车费大幅提高。由于乘客端账户预存打车费较少，无法支付全额车费。网约车公司为提升市场占有率，按照内部规定，在这种情况下由公司垫付车费，并给予司机承接订单的补贴。四被告人采用该手段，分别非法骗取网约车公司垫付车费及公司给予司机承接订单的补贴。其中董某骗取人民币40664.94元（币种下同），谈某贤骗取14211.99元，高某骗取38943.01元，宋某华骗取6627.43元。 上海市普陀区人民法院于2016年4月18日以（2016）沪0107刑初377号刑事判决，认定被告人董某、谈某贤、高某、宋某华的行为构成诈骗罪，分别判处被告人董某有期徒刑一年，并处罚金人民币一千元；被告人谈某贤有期徒刑十个月，并处罚金人民币一千元；被告人高某有期徒刑一年，并处罚金人民币一千元；被告人宋某华有期徒刑八个月，并处罚金人民币一千元。宣判后，没有上诉、抗诉，判决已发生法律效力。\n\n【"
+    ],
+    "reference": "The defendants, who were registered drivers on a ride-hailing platform, purchased unregistered mobile numbers to create passenger accounts, pre-loaded them with small amounts of fare, and then fabricated ride orders. They used their own or controlled driver accounts to accept these orders, initially requesting short trips but then intentionally changing the destination to significantly longer distances, causing the fare to increase dramatically. Since the passenger accounts had insufficient pre-loaded funds to cover the full fare, the ride-hailing company, following its internal policies to boost market share, covered the unpaid fares and paid the drivers order subsidies. Through this method, the defendants illegally defrauded the company of these垫付车费 and subsidies. The Shanghai Putuo District People's Court, in its (2016) Hu 0107 Criminal Initial 377 verdict, found them guilty of fraud and sentenced them to prison terms and fines: Dong某 to one year in prison and a RMB 1,000 fine; Tan某xian to ten months in prison and a RMB 1,000 fine; Gao某 to one year in prison and a RMB 1,000 fine; and Song某hua to eight months in prison and a RMB 1,000 fine. The judgment became legally effective as there was no appeal or protest.",
+    "synthesizer_name": "multi_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "As an Environmental Compliance Officer, how does the legal reasoning in this case regarding the defendant's unilateral deduction of a container rental deposit to collect overdue usage fees, and the subsequent court-ordered refund based on a calculation principle of 150% of a new container's market price, illustrate the legal risks and administrative oversight challenges an organization might face when enforcing environmental or operational fees without proper settlement negotiations?",
+    "reference_contexts": [
+      "<1-hop>\n\n判决理由】\n 本案的争议焦点为：集装箱超期使用费的金额如何认定。 本案中，被告收取集装箱超期使用费的方式是扣减原告通过被告的放箱代理人向被告支付的集装箱租用押金。在此种单方扣减押金的支付模式下，不存在针对案涉集装箱超期使用费的结算协商的过程，不能仅从被告通过扣减租用押金收取集装箱超期使用费来倒推得出原告对金额予以确认的结论，不能认为原、被告已就集装箱超期使用费金额达成一致，在原告对被告扣减租用押金的行为不予认可的情况下，有权主张被告返还超额收取的集装箱超期使用费。通常理解，收货人未及时归还集装箱给承运人造成的损失主要是集装箱被占用导致承运人用箱周转发生困难，有可能导致承运人购置新的集装箱。此种情况下，承运人的损失至多为新箱购置价格。但与此同时也应当合理考虑另一个因素，即若承运人购置了新箱，收货人在此后的某个时间又归还了旧箱，则承运人将面临集装箱过剩、闲置的困境，难免会额外增加堆存、管理和处置开支。综合以上因素，原则上可以同类新箱市价一倍为基准确定赔偿额，同时结合双方当事人对发生集装箱超期使用的过错程度等个案实际作适当浮动或调整。就本案而言，可酌情确定为一个新箱市价的150%，即45000元。综上，法院判决被告需向原告返还19220元。\n\n【"
+    ],
+    "reference": "The legal reasoning highlights that the defendant's method of unilaterally deducting the container rental deposit to collect overdue usage fees did not constitute a settlement negotiation, and thus, the plaintiff could contest the amount and claim a refund for overcharged fees. The court determined that the compensation for overdue container use should primarily consider the loss to the carrier, such as the cost of purchasing a new container, while also accounting for potential excess container inventory and related management expenses. Consequently, the compensation was set at 150% of the market price of a new container, amounting to 45,000 yuan, and the court ordered the defendant to refund 19,220 yuan to the plaintiff, underscoring the risks of inadequate administrative oversight in fee enforcement.",
+    "synthesizer_name": "multi_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "As a Commercial Litigation Attorney advising a client on a trademark application rejection, can you explain how the provisions of the 中华人民共和国商标法, specifically the sections regarding deceptive marks and descriptive terms, were applied in the BIODERMA case to initially deny the trademark for pharmaceutical and skincare preparations, and what was the ultimate outcome after the judicial review process?",
+    "reference_contexts": [
+      "<1-hop>\n\n案件事实】\n 在再审申请人诺某某与被申请人国家知识产权局商标申请驳回复审行政纠纷案中，诺某某向国家知识产权局申请第2908723X号\"BIODERMA\"商标（以下简称诉争商标），指定使用商品类别为第5类0501-0508群组：医药制剂；护肤药剂；医用营养品；维生素制剂等。原国家工商行政管理总局商标评审委员会作出商评字[2019]第45421号《关于第2908723X号\"BIODERMA\"商标驳回复审决定书》，认为：诉争商标使用在\"医药制剂、护肤药剂\"等商品上直接表示了商品的功能用途等特点，使用在\"医药制剂、护肤药剂\"等以外的商品上易使消费者产生误认，已构成2013年修正的《中华人民共和国商标法》（以下简称2013年商标法）第十条第一款第（七）项、第十一条第一款第（二）项所指情形；诺某某所述其他商标获准注册的情况不能成为诉争商标予以初步审定的当然依据。遂对诉争商标在复审商品上的注册申请予以驳回。 诺某某不服，提起行政诉讼。北京知识产权法院于2019年9月19日作出（2019）京73行初9638号行政判决：驳回诺某某的诉讼请求。诺某某不服，提起上诉。北京市高级人民法院于2020年5月28日作出（2020）京行终485号行政判决：驳回上诉，维持一审判决。诺某某不服，向最高人民法院申请再审，主张诉争商标在\"医药制剂；护肤药剂；皮肤病用医药制剂\"三项商品上应核准注册。最高人民法院裁定提审本案，并于2022年5月9日作出（2022）最高法行再4号行政判决：撤销一、二审判决和被诉决定，国家知识产权局重新作出决定。\n\n【"
+    ],
+    "reference": "In the case concerning the application for the \"BIODERMA\" trademark, the original rejection by the Trademark Review and Adjudication Board was based on the 2013 Trademark Law of the People's Republic of China. The Board determined that the trademark, when used on goods such as \"pharmaceutical preparations\" and \"skin care preparations,\" directly indicated the functional uses and characteristics of the goods, falling under the circumstance prohibited by Article 11, Paragraph 1, Item (2) of the 2013 Trademark Law. Furthermore, using the mark on goods other than those specific preparations was deemed likely to cause consumer confusion, constituting a situation under Article 10, Paragraph 1, Item (7) of the same law. Consequently, the application for the trademark on the复审商品 (reviewed goods) was rejected. The applicant, Nuou Moumou, pursued administrative litigation. After initial judgments from the Beijing Intellectual Property Court and the Beijing High People's Court upheld the rejection, the Supreme People's Court ultimately heard the case. The Supreme People's Court's judgment resulted in the revocation of the first and second instance judgments and the original administrative decision, ordering the National Intellectual Property Administration to make a new decision.",
+    "synthesizer_name": "multi_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "What is the legal definition and potential consequences for a state-employed network administrator who commits 国有事业单位人员滥用职权罪 under the relevant criminal law?",
+    "reference_contexts": [
+      "<1-hop>\n\n关键词】\n刑事, 贪污罪, 受贿罪, 国有事业单位人员滥用职权罪, 滥用职权罪, 供销合作社联合社, 行政管理职权\n\n【 相关法律】\n中华人民共和国刑法 第168条"
+    ],
+    "reference": "The legal definition and consequences for a state-employed network administrator who commits 国有事业单位人员滥用职权罪 (abuse of authority by personnel of state-owned institutions) are governed by the Criminal Law of the People's Republic of China, specifically Article 168. This offense involves the abuse of administrative management authority by personnel in state-owned institutions, such as those in supply and marketing cooperatives, and is treated as a criminal matter alongside crimes like embezzlement and bribery.",
+    "synthesizer_name": "multi_hop_specific_query_synthesizer"
+  },
+  {
+    "user_input": "What is 行政处罚 for using short-term manipulation tactics in the stock market?",
+    "reference_contexts": [
+      "<1-hop>\n\n裁判要旨】\n 证券市场交易中，对于特定股票，不以成交为目的，采取大量申报买入、盘中多次大额封涨停、拉抬后封涨停、虚假申报，影响或意图影响股票交易价格或交易量，于次一交易日反向卖出等操作手段，属于利用短线操作手段操纵市场的违法行为。证券监管机构根据证券法立法目的和有关操纵市场条款中明确列举的情形，对性质、影响等方面相同或相似的短线操纵市场的违法行为，依法适用禁止操纵市场兜底条款的规定进行查出并作出处罚决定的，人民法院应予支持。 \n\n【 关键词】\n行政, 行政处罚, 操纵市场, 短线操纵, 没收违法所得\n\n【 相关法律】\n中华人民共和国行政诉讼法 第89条"
+    ],
+    "reference": "行政处罚 for using short-term manipulation tactics in the stock market involves the securities regulatory authority applying the catch-all provision against market manipulation to investigate and impose penalties, including confiscation of illegal gains, which is supported by the People's Court according to the Administrative Litigation Law of the People's Republic of China, Article 89.",
+    "synthesizer_name": "multi_hop_specific_query_synthesizer"
+  }
+]
