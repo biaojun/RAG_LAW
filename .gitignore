@@ -1,5 +1,6 @@
 # for data_processing module
-data_processing/*_db
+*_db
 data_processing/__pycache__
 data_processing/formal_*
+__pycache__
 .vscode
