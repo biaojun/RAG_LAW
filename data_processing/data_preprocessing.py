@@ -2,64 +2,10 @@ import pandas as pd
 import json
 import os
 import sys
-import re
+# import re # 已移除，不再需要
 
-def parse_related_laws(text):
-    """
-    Parse the related_laws field to extract legal names and corresponding article numbers
-    Return format: [{
-        "law_name": "Full legal name (including document number)",
-        "article_numbers": ["Article number 1", "Article number 2"]  # Array of pure numeric article numbers
-    }]
-    """
-    # Handle null values or non-string types
-    if pd.isna(text) or not isinstance(text, str):
-        return []
-    
-    # 1. Separate legal provisions part (using "######" as separator, keep only left-side legal content)
-    law_text = text.split('######')[0].strip()
-    if not law_text:  # Return empty list if no legal provisions exist
-        return []
-    
-    # 2. Regular expression matching: Extract legal names from 《》 and subsequent associated articles
-    # Matching rule explanation:
-    # 《([^》]+?)》: Match legal names within 《》 (supports parentheses and document numbers, e.g., "（法释〔2000〕33号）")
-    # (第[\d]+条(?:第[\d]+款)?(?:、第[\d]+条(?:第[\d]+款)?)?)*: Match subsequent articles (supports single/multiple articles, articles with paragraphs)
-    pattern = r'《([^》]+?)》(第[\d]+条(?:第[\d]+款)?(?:、第[\d]+条(?:第[\d]+款)?)?)*'
-    matches = re.findall(pattern, law_text)
-    
-    parsed_result = []
-    for law_name, articles_str in matches:
-        # Skip matches with no article information (only legal name without articles)
-        if not articles_str or articles_str.strip() == "":
-            continue
-        
-        # 3. Split multiple articles (e.g., "第1条、第3条第2款" → split into ["第1条", "第3条第2款"])
-        single_articles = [art.strip() for art in articles_str.split('、') if art.strip()]
-        
-        # 4. Extract pure numeric article numbers (e.g., "第133条"→"133", "第54条第2款"→"54")
-        article_nums = []
-        for art in single_articles:
-            # Regular expression to extract number X from "第X条" (compatible with articles with paragraphs)
-            art_match = re.search(r'第(\d+)条', art)
-            if art_match:
-                article_nums.append(art_match.group(1))  # Keep only pure numeric article numbers
-        
-        # 5. Assemble result (ensure article number array is not empty)
-        if article_nums:
-            parsed_result.append({
-                "law_name": law_name.strip(),  # Legal name (e.g., "最高人民法院关于审理交通肇事刑事案件具体应用法律若干问题的解释（法释〔2000〕33号）")
-                "article_numbers": article_nums  # Array of article numbers (e.g., ["1", "3"])
-            })
-    return parsed_result
-
-def parse_keywords(text):
-    if pd.isna(text) or not isinstance(text, str):
-        return []
-    keywords = text.split(',')
-    if not keywords:
-        return []
-    return keywords
+# 移除了 parse_related_laws 函数
+# 移除了 parse_keywords 函数
 
 if __name__ == "__main__":
     input_file = 'test_law_case.xlsx'
@@ -70,6 +16,7 @@ if __name__ == "__main__":
     else:
         input_file = sys.argv[1]
         print(f"Formal data preprocess started, test data in {input_file} will be processed\n")
+    
     # Read file
     workdir = os.getcwd()
     excel_file = pd.ExcelFile(os.path.join(workdir, input_file))
@@ -83,36 +30,91 @@ if __name__ == "__main__":
 
     # View number of rows and columns in the dataset
     rows, columns = df.shape
+    print(f"\nDataset has {rows} rows and {columns} columns.")
 
-    df = df.drop(columns=['入库编号', 'source_id', '入库编号', '法院名称', "案件证号", '庭审', '入库日期', '省份'])
-    # Define column name mapping relationship
-    column_mapping = {
-        'id': 'id',
-        '一级分类': 'category',
-        '二级分类': 'criminal_charge',
-        '案名': 'case_name',
-        '裁判日期': 'judgment_date',
-        '裁决要旨': 'judgment_summary',
-        '关键词': 'keywords',
-        '基本案情': 'case_facts',
-        '裁判理由': 'judgment_reason',
-        '裁判要旨': 'judgement_holding',
-        '关联索引': 'related_laws'
-    }
-    # Rename columns
-    df = df.rename(columns=column_mapping)
-    df['related_laws'] = df['related_laws'].apply(parse_related_laws)
+    # 移除了旧的 df.drop() 和列重命名逻辑
+    # 我们将保留所有需要的列，并直接使用原始名称
+
+    # 用于存储最终结果的列表
+    json_result = []
+
+    # 遍历 DataFrame 的每一行来构建新的 JSON 结构
+    for index, row in df.iterrows():
+        
+        # 1. 处理 'categories' 字段
+        categories = ""
+        keywords_val = row.get('关键词') # 使用 .get() 避免列不存在的错误
+        
+        # 检查关键词是否为 NaN 或空字符串
+        if pd.isna(keywords_val) or str(keywords_val).strip() == "":
+            # 如果关键词为空，则合并一级分类和二级分类
+            cats_list = []
+            cat1 = str(row['一级分类']) if pd.notna(row['一级分类']) and str(row['一级分类']).strip() else None
+            cat2 = str(row['二级分类']) if pd.notna(row['二级分类']) and str(row['二级分类']).strip() else None
+            
+            if cat1:
+                cats_list.append(cat1)
+            if cat2:
+                cats_list.append(cat2)
+            categories = ",".join(cats_list)
+        else:
+            # 如果关键词不为空，则直接使用
+            categories = str(keywords_val)
+            
+        # 2. 处理 'text' 字段 (拼接)
+        # 确保字段存在且在拼接时处理 NaNs
+        case_name = str(row.get('案名', '')) if pd.notna(row.get('案名')) else "无"
+        case_facts = str(row.get('基本案情', '')) if pd.notna(row.get('基本案情')) else "无"
+        judgment_reason = str(row.get('裁判理由', '')) if pd.notna(row.get('裁判理由')) else "无"
+        judgement_holding = str(row.get('裁判要旨', '')) if pd.notna(row.get('裁判要旨')) else "无"
+        
+        text = (
+            f"[案名]{case_name}\n"
+            f"[基本案情]{case_facts}\n"
+            f"[裁判理由]{judgment_reason}\n"
+            f"[裁判要旨]{judgement_holding}"
+        )
+        
+        # 3. 处理 'metadata' 字段
+        
+        # 处理裁判日期 (转换为 YYYY-MM-DD 字符串，处理 NaT/NaN)
+        judgment_date = None
+        if pd.notna(row.get('裁判日期')):
+            try:
+                # 尝试将其转换为 datetime 并格式化
+                judgment_date = pd.to_datetime(row['裁判日期']).strftime('%Y-%m-%d')
+            except Exception:
+                # 如果失败，直接转为字符串
+                judgment_date = str(row['裁判日期'])
+        else:
+            judgment_date = "无"
+
+        metadata = {
+            "categories": categories,
+            "法院": str(row.get('法院名称')) if pd.notna(row.get('法院名称')) else "无",
+            "省份": str(row.get('省份')) if pd.notna(row.get('省份')) else "无",
+            "裁判日期": judgment_date,
+            "案号": str(row.get('案件证号')) if pd.notna(row.get('案件证号')) else "无"
+        }
+        
+        # 4. 组装最终的单条记录
+        record = {
+            "doc_id": str(row.get('id')) if pd.notna(row.get('id')) else None,
+            "text": text,
+            "metadata": metadata
+        }
+        
+        json_result.append(record)
+
+  
     
-    df['keywords'] = df['keywords'].apply(parse_keywords)
-
-    # Convert DataFrame to JSON format
-    result = df.to_json(orient='records', force_ascii=False, indent=4)
-
-    # Parse JSON string into Python object
-    json_result = json.loads(result)
-
     # Save to file
     output_filename = f"{input_file.strip('.xlsx')}.json"
     json_path = os.path.join(workdir, output_filename)
+    
+    print(f"\nProcessing complete. Saving to {json_path}")
+    
     with open(json_path, 'w', encoding='utf-8') as f:
         json.dump(json_result, f, ensure_ascii=False, indent=4)
+
+    print("Done.")
