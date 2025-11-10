@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本地问答系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #ffffff;
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            width: 260px;
+            background: #f7f7f8;
+            border-right: 1px solid #e5e5e7;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid #e5e5e7;
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            padding: 12px 16px;
+            background: white;
+            border: 1px solid #e5e5e7;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .new-chat-btn:hover {
+            background: #f5f5f5;
+            border-color: #d0d0d0;
+        }
+
+        .conversations-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .conversation-item {
+            padding: 12px;
+            margin: 2px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+
+        .conversation-item:hover {
+            background: #ececf1;
+        }
+
+        .conversation-item.active {
+            background: #e6f4ff;
+        }
+
+        .conversation-icon {
+            width: 16px;
+            height: 16px;
+            opacity: 0.6;
+        }
+
+        .conversation-title {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 24px;
+        }
+
+        .delete-conversation-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.2s, background-color 0.2s;
+        }
+
+        .conversation-item:hover .delete-conversation-btn {
+            opacity: 1;
+        }
+
+        .delete-conversation-btn:hover {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: white;
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e5e7;
+            text-align: center;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .message {
+            margin-bottom: 24px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-user {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+
+        .user-message .message-user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .user-avatar {
+            background: #10a37f;
+            color: white;
+        }
+
+        .assistant-avatar {
+            background: #5436da;
+            color: white;
+        }
+
+        .message-content {
+            flex: 1;
+            padding-top: 4px;
+            max-width: calc(100% - 48px);
+        }
+
+        .user-message .message-content {
+            text-align: right;
+        }
+
+        .message-text {
+            line-height: 1.6;
+            white-space: pre-wrap;
+            padding: 12px 16px;
+            border-radius: 12px;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .user-message .message-text {
+            background: #10a37f;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .assistant-message .message-text {
+            background: #f7f7f8;
+            color: #333;
+            border-bottom-left-radius: 4px;
+        }
+
+        .input-area {
+            padding: 20px;
+            border-top: 1px solid #e5e5e7;
+            background: white;
+        }
+
+        .input-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        #questionInput {
+            width: 100%;
+            /* left padding increased to make room for upload button */
+            padding: 16px 48px 16px 56px;
+            border: 1px solid #e5e5e7;
+            border-radius: 12px;
+            font-size: 16px;
+            resize: none;
+            min-height: 60px;
+            max-height: 120px;
+            line-height: 1.5;
+            transition: border-color 0.2s;
+            background: white;
+        }
+
+        #questionInput:focus {
+            outline: none;
+            border-color: #10a37f;
+            box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.1);
+        }
+        /* 发送按钮位置 */
+        .send-button {
+            position: absolute;
+            right: 12px;
+            bottom: 20px;
+            background: #10a37f;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        /* 上传按钮位置 */
+        .upload-button {
+            position: absolute;
+            left: 16px;
+            bottom: 20px;
+            background: #f3f4f6;
+            color: #333;
+            border: 1px solid #e5e5e7;
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background: #0d8c6c;
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #6c757d;
+            padding: 80px 20px;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 12px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 4px;
+            height: 4px;
+            background: #666;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-5px); opacity: 1; }
+        }
+
+        .error-message {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border: 1px solid #fecaca;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" onclick="startNewChat()">
+                    <span>+</span>
+                    新对话
+                </button>
+            </div>
+            <div class="conversations-list" id="conversationsList">
+                <!-- 会话列表会在这里动态生成 -->
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="main-content">
+            <div class="chat-header">
+                <h1>RAG-based Knowledge Base QA System</h1>
+            </div>
+
+            <div class="chat-container" id="chatContainer">
+                <div class="empty-state" id="emptyState">
+                    <h3>Welcome to use QA System</h3>
+                    <p>请输入您的问题开始对话，所有记录将保存在本地</p>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-container">
+                        <!-- 上传按钮（隐藏真实 file input） -->
+                        <input type="file" id="fileInput" accept=".txt,.csv" style="display:none" onchange="uploadFile()" />
+                        <button id="uploadButton" class="upload-button" title="上传文件(.txt/.csv)" onclick="document.getElementById('fileInput').click()">📎</button>
+
+                        <textarea 
+                            id="questionInput" 
+                            placeholder="输入您的问题..." 
+                            rows="1"
+                        ></textarea>
+                        <button id="sendButton" class="send-button" onclick="sendQuestion()">
+                            ↑
+                        </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let currentConversationId = null;
+        let conversations = [];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConversations();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            const input = document.getElementById('questionInput');
+            
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendQuestion();
+                }
+            });
+
+            input.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+        }
+
+        // 开始新对话
+        function startNewChat() {
+            currentConversationId = null;
+            document.getElementById('chatContainer').innerHTML = `
+                <div class="empty-state" id="emptyState">
+                    <h3>欢迎使用问答系统</h3>
+                    <p>请输入您的问题开始对话，所有记录将保存在本地</p>
+                </div>
+            `;
+            document.getElementById('questionInput').value = '';
+            updateConversationSelection();
+            loadConversations();
+        }
+
+        // 加载会话列表
+        async function loadConversations() {
+            try {
+                const response = await fetch('/api/conversations');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                conversations = data.conversations;
+                renderConversations();
+            } catch (error) {
+                console.error('加载会话列表失败:', error);
+            }
+        }
+
+        // 渲染会话列表
+        function renderConversations() {
+            const container = document.getElementById('conversationsList');
+            
+            if (conversations.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666; font-size: 14px;">暂无对话记录</div>';
+                return;
+            }
+
+            container.innerHTML = conversations.map(conv => `
+                <div class="conversation-item ${currentConversationId === conv.id ? 'active' : ''}" 
+                     onclick="loadConversation('${conv.id}')">
+                    <div class="conversation-icon">💬</div>
+                    <div class="conversation-title">${conv.title}</div>
+                    <button class="delete-conversation-btn" onclick="event.stopPropagation(); deleteConversation('${conv.id}')" title="删除会话">
+                        ×
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // 删除会话
+        async function deleteConversation(conversationId) {
+            if (!confirm('确定要删除这个会话吗？此操作不可恢复。')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/conversation/${conversationId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // 如果删除的是当前会话，清空聊天区域
+                if (currentConversationId === conversationId) {
+                    currentConversationId = null;
+                    document.getElementById('chatContainer').innerHTML = `
+                        <div class="empty-state" id="emptyState">
+                            <h3>欢迎使用问答系统</h3>
+                            <p>请输入您的问题开始对话，所有记录将保存在本地</p>
+                        </div>
+                    `;
+                }
+
+                // 重新加载会话列表
+                await loadConversations();
+                
+            } catch (error) {
+                console.error('删除会话失败:', error);
+                alert('删除会话失败: ' + error.message);
+            }
+        }
+
+        // 加载特定会话
+        async function loadConversation(conversationId) {
+            try {
+                const response = await fetch(`/api/conversation/${conversationId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                currentConversationId = conversationId;
+                renderMessages(data.messages);
+                updateConversationSelection();
+            } catch (error) {
+                console.error('加载会话失败:', error);
+                showError('加载会话失败: ' + error.message);
+            }
+        }
+
+        // 渲染消息
+        function renderMessages(messages) {
+            const container = document.getElementById('chatContainer');
+            
+            if (messages.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" id="emptyState">
+                        <h3>欢迎使用问答系统</h3>
+                        <p>请输入您的问题开始对话，所有记录将保存在本地</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = messages.map(msg => `
+                <div class="message ${msg.type === 'question' ? 'user-message' : 'assistant-message'}">
+                    <div class="message-user">
+                        <div class="message-avatar ${msg.type === 'question' ? 'user-avatar' : 'assistant-avatar'}">
+                            ${msg.type === 'question' ? '你' : 'AI'}
+                        </div>
+                        <div class="message-content">
+                            <div class="message-text">${msg.content}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 更新会话选择状态
+        function updateConversationSelection() {
+            document.querySelectorAll('.conversation-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            if (currentConversationId) {
+                const activeItem = document.querySelector(`[onclick="loadConversation('${currentConversationId}')"]`);
+                if (activeItem) {
+                    activeItem.classList.add('active');
+                }
+            }
+        }
+
+        // 发送问题
+        async function sendQuestion() {
+            const input = document.getElementById('questionInput');
+            const button = document.getElementById('sendButton');
+            const question = input.value.trim();
+
+            if (!question) return;
+
+            // 禁用输入和按钮
+            input.disabled = true;
+            button.disabled = true;
+
+            try {
+                // 隐藏空状态
+                const emptyState = document.getElementById('emptyState');
+                if (emptyState) emptyState.style.display = 'none';
+
+                const container = document.getElementById('chatContainer');
+
+                // 添加用户消息
+                container.innerHTML += `
+                    <div class="message user-message">
+                        <div class="message-user">
+                            <div class="message-avatar user-avatar">你</div>
+                            <div class="message-content">
+                                <div class="message-text">${question}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // 添加AI回复占位符
+                const messageId = 'temp_' + Date.now();
+                container.innerHTML += `
+                    <div class="message assistant-message" id="${messageId}">
+                        <div class="message-user">
+                            <div class="message-avatar assistant-avatar">AI</div>
+                            <div class="message-content">
+                                <div class="message-text typing-indicator">
+                                    <div class="typing-dot"></div>
+                                    <div class="typing-dot"></div>
+                                    <div class="typing-dot"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                container.scrollTop = container.scrollHeight;
+
+                // 准备请求数据
+                const requestData = {
+                    question: question
+                };
+                
+                // 只有在有当前会话时才发送conversation_id
+                if (currentConversationId) {
+                    requestData.conversation_id = currentConversationId;
+                }
+
+                console.log('发送请求数据:', requestData);
+
+                // 发送请求
+                const response = await fetch(`${API_BASE}/ask`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('服务器响应错误:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                currentConversationId = data.conversation_id;
+
+                // 更新AI回复
+                const aiMessage = document.getElementById(messageId);
+                aiMessage.innerHTML = `
+                    <div class="message-user">
+                        <div class="message-avatar assistant-avatar">AI</div>
+                        <div class="message-content">
+                            <div class="message-text">${data.answer}</div>
+                        </div>
+                    </div>
+                `;
+
+                // 重新加载会话列表
+                await loadConversations();
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('发送失败: ' + error.message);
+                
+                // 移除加载指示器
+                const tempMessage = document.getElementById(messageId);
+                if (tempMessage) {
+                    tempMessage.innerHTML = `
+                        <div class="message-user">
+                            <div class="message-avatar assistant-avatar">AI</div>
+                            <div class="message-content">
+                                <div class="message-text" style="color: #dc2626;">发送失败，请重试: ${error.message}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } finally {
+                // 恢复输入和按钮
+                input.disabled = false;
+                button.disabled = false;
+                input.value = '';
+                input.style.height = 'auto';
+                input.focus();
+            }
+        }
+
+        // 上传文件并保存到后端（visualization/chat_files）
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
+
+            const file = fileInput.files[0];
+            const allowed = ['.txt', '.csv'];
+            const ext = file.name.slice((Math.max(0, file.name.lastIndexOf('.'))));
+            if (!allowed.includes(ext.toLowerCase())) {
+                alert('仅支持 .txt 和 .csv 文件');
+                fileInput.value = '';
+                return;
+            }
+
+            const container = document.getElementById('chatContainer');
+            // 显示上传占位
+            const tempId = 'upload_' + Date.now();
+            container.innerHTML += `
+                <div class="message assistant-message" id="${tempId}">
+                    <div class="message-user">
+                        <div class="message-avatar assistant-avatar">AI</div>
+                        <div class="message-content">
+                            <div class="message-text">上传中: ${file.name}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.scrollTop = container.scrollHeight;
+
+            const formData = new FormData();
+            formData.append('file', file, file.name);
+            if (currentConversationId) {
+                formData.append('conversation_id', currentConversationId);
+            }
+
+            try {
+                const resp = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const elem = document.getElementById(tempId);
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    if (elem) {
+                        elem.innerHTML = `\n                            <div class="message-user">\n                                <div class="message-avatar assistant-avatar">AI</div>\n                                <div class="message-content">\n                                    <div class="message-text" style="color: #dc2626;">上传失败: ${resp.status} ${text}</div>\n                                </div>\n                            </div>`;
+                    }
+                    return;
+                }
+
+                const data = await resp.json();
+                if (elem) {
+                    elem.innerHTML = `\n                        <div class="message-user">\n                            <div class="message-avatar assistant-avatar">AI</div>\n                            <div class="message-content">\n                                <div class="message-text">文件上传成功: ${data.filename}</div>\n                            </div>\n                        </div>`;
+                }
+
+                // 重新加载会话列表（如果需要）
+                await loadConversations();
+
+            } catch (err) {
+                console.error('上传失败', err);
+                const elem = document.getElementById(tempId);
+                if (elem) {
+                    elem.innerHTML = `\n                        <div class="message-user">\n                            <div class="message-avatar assistant-avatar">AI</div>\n                            <div class="message-content">\n                                <div class="message-text" style="color: #dc2626;">上传失败: ${err.message}</div>\n                            </div>\n                        </div>`;
+                }
+            } finally {
+                fileInput.value = '';
+            }
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const container = document.getElementById('chatContainer');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            container.appendChild(errorDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+    </script>
+</body>
+</html>
