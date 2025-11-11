@@ -364,7 +364,7 @@ class EnhancedLegalRetriever:
             result["rewritten_query"] = rewritten_query
             result["matched_categories"] = categories
 
-        return final_results
+        return final_results, rewritten_query
 
 
 # 测试代码
