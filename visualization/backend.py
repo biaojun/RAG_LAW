@@ -84,16 +84,16 @@ def generate_answer(question: str) -> tuple:
 def rag_answer(question: str) -> tuple:
     """调用真实的 RAG 流程，并将上下文格式化为可展示的字符串列表。"""
     try:
-        answer, ctx = rag_retrieve_and_generate(question)
-        display_ctx = []
-        for c in (ctx or []):
+        answer, context = rag_retrieve_and_generate(question)
+        display_context = []
+        for c in (context or []):
             try:
                 law = c.get("law_name") or "未知法典"
                 art = c.get("law_article_num") or "?"
-                display_ctx.append(f"《{law}》第{art}条")
+                display_context.append(f"《{law}》第{art}条")
             except Exception:
                 continue
-        return answer, display_ctx
+        return answer, display_context
     except Exception as e:
         # 回退：不影响前端使用
         fallback_ans, fallback_ctx = generate_answer(question)
@@ -211,14 +211,30 @@ def parse_message_from_file(filepath):
         timestamp = re.search(r'时间: (.+)', content)
         question = re.search(r'问题: (.+)', content)
         # 使用 re.DOTALL 标志来匹配多行回答
-        answer = re.search(r'回答: ([\s\S]+?)(?=\n上下文:|$)', content)
+        answer = re.search(r'回答: ([\s\S]+?)(?=\n上下文:|\ntopk:|$)', content)
+        context_match = re.search(r'上下文: (.+)', content)
+        topk_match = re.search(r'^topk:\s*(.+)$', content, flags=re.MULTILINE)
+
+        context_list = []
+        if context_match:
+            raw = context_match.group(1).strip()
+            context_list = [c.strip() for c in raw.split(',') if c.strip()]
+
+        topk_val = None
+        if topk_match:
+            try:
+                topk_val = float(topk_match.group(1).strip())
+            except Exception:
+                topk_val = topk_match.group(1).strip()
 
         return {
             'id': message_id.group(1) if message_id else os.path.basename(filepath),
             'type': message_type.group(1) if message_type else 'unknown',
             'timestamp': timestamp.group(1) if timestamp else '',
             'question': question.group(1) if question else '',
-            'answer': answer.group(1) if answer else '',
+            'answer': answer.group(1).strip() if answer else '',
+            'context': context_list,
+            'topk': topk_val,
             'filepath': filepath
         }
     except Exception as e:
@@ -345,6 +361,38 @@ async def get_conversation_messages(conversation_id: str):
     except Exception as e:
         print(f"获取会话消息出错: {str(e)}")
         raise HTTPException(status_code=500, detail=f"获取会话消息时出错: {str(e)}")
+
+
+@app.get("/api/conversation/{conversation_id}/message/{message_id}")
+async def get_message_detail(conversation_id: str, message_id: str):
+    """返回特定消息（answer 类型）的详细解析：answer 文本、上下文列表、topk 和文件路径"""
+    try:
+        conversation_dir = os.path.join(DATA_DIR, conversation_id)
+        if not os.path.exists(conversation_dir):
+            raise HTTPException(status_code=404, detail=f"未找到会话: {conversation_id}")
+
+        # 遍历会话目录下的所有 txt 文件，找到 id 匹配且类型为 answer 的文件
+        for filepath in glob.glob(os.path.join(conversation_dir, "*.txt")):
+            parsed = parse_message_from_file(filepath)
+            if not parsed:
+                continue
+            if parsed.get('id') == message_id and parsed.get('type') == 'answer':
+                return {
+                    "id": parsed.get('id'),
+                    "question": parsed.get('question'),
+                    "answer": parsed.get('answer'),
+                    "context": parsed.get('context', []),
+                    "topk": parsed.get('topk'),
+                    "filepath": parsed.get('filepath')
+                }
+
+        raise HTTPException(status_code=404, detail=f"未找到消息: {message_id}")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"获取消息详情出错: {e}")
+        raise HTTPException(status_code=500, detail=f"获取消息详情出错: {str(e)}")
 
 
 @app.delete("/api/conversation/{conversation_id}")

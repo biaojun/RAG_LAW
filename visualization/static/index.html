@@ -394,6 +394,44 @@
             border: 1px solid #fecaca;
             font-size: 14px;
         }
+
+        /* 详情放大镜按钮 */
+        .detail-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            padding: 4px;
+            margin: 0;
+            line-height: 1;
+        }
+
+        /* 详情模态，复用 modal-backdrop 风格 */
+        .detail-backdrop {
+            position: fixed;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2100;
+        }
+
+        .detail-modal {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            width: 480px;
+            max-width: 95%;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            font-size: 14px;
+        }
+
+        .detail-modal pre { white-space: pre-wrap; word-break: break-word; }
     </style>
 </head>
 <body>
@@ -455,6 +493,24 @@
                 <div class="actions">
                     <button onclick="closeSettings()">取消</button>
                     <button onclick="saveSettings()">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详情模态弹窗 -->
+        <div id="detailBackdrop" class="detail-backdrop">
+            <div class="detail-modal">
+                <h3>消息详情</h3>
+                <div style="margin-bottom:8px;font-size:13px;color:#555;"><strong>ID:</strong> <span id="detailMessageId"></span> &nbsp; <strong>类型:</strong> <span id="detailMessageType"></span></div>
+                <div style="margin-bottom:8px;"><strong>TopK:</strong> <span id="detailTopk">—</span></div>
+                <div style="margin-bottom:8px;"><strong>上下文:</strong>
+                    <pre id="detailContext" style="background:#fafafa;border:1px solid #eee;padding:8px;border-radius:6px;max-height:120px;overflow:auto">无</pre>
+                </div>
+                <div><strong>回答内容:</strong>
+                    <pre id="detailContent" style="background:#fafafa;border:1px solid #eee;padding:10px;border-radius:6px;max-height:320px;overflow:auto">-</pre>
+                </div>
+                <div style="text-align:right;margin-top:10px">
+                    <button onclick="closeDetailModal()">关闭</button>
                 </div>
             </div>
         </div>
@@ -646,18 +702,35 @@
                 return;
             }
 
-            container.innerHTML = messages.map(msg => `
-                <div class="message ${msg.type === 'question' ? 'user-message' : 'assistant-message'}">
-                    <div class="message-user">
-                        <div class="message-avatar ${msg.type === 'question' ? 'user-avatar' : 'assistant-avatar'}">
-                            ${msg.type === 'question' ? '你' : 'AI'}
+            container.innerHTML = messages.map(msg => {
+                if (msg.type === 'question') {
+                    return `
+                        <div class="message user-message">
+                            <div class="message-user">
+                                <div class="message-avatar user-avatar">你</div>
+                                <div class="message-content">
+                                    <div class="message-text">${msg.content}</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="message-content">
-                            <div class="message-text">${msg.content}</div>
+                    `;
+                } else {
+                    // assistant message with detail button below avatar
+                    return `
+                        <div class="message assistant-message">
+                            <div class="message-user">
+                                <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                                    <div class="message-avatar assistant-avatar">AI</div>
+                                    <button class="detail-btn" title="查看详情" onclick="viewMessageDetail('${msg.id}')">🔍</button>
+                                </div>
+                                <div class="message-content">
+                                    <div class="message-text">${msg.content}</div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            `).join('');
+                    `;
+                }
+            }).join('');
 
             container.scrollTop = container.scrollHeight;
         }
@@ -875,6 +948,48 @@
             errorDiv.textContent = message;
             container.appendChild(errorDiv);
             container.scrollTop = container.scrollHeight;
+        }
+
+        // 打开消息详情弹窗
+        async function viewMessageDetail(messageId) {
+            if (!currentConversationId) {
+                alert('未选择会话，无法查看消息详情');
+                return;
+            }
+
+            try {
+                const resp = await fetch(`${API_BASE}/conversation/${currentConversationId}/message/${messageId}`);
+                if (!resp.ok) {
+                    const txt = await resp.text();
+                    throw new Error(`请求失败: ${resp.status} ${txt}`);
+                }
+                const data = await resp.json();
+
+                // 填充并显示详情模态
+                const backdrop = document.getElementById('detailBackdrop');
+                const idEl = document.getElementById('detailMessageId');
+                const typeEl = document.getElementById('detailMessageType');
+                const topkEl = document.getElementById('detailTopk');
+                const ctxEl = document.getElementById('detailContext');
+                const contentEl = document.getElementById('detailContent');
+
+                if (idEl) idEl.textContent = data.id || '';
+                if (typeEl) typeEl.textContent = 'answer';
+                if (topkEl) topkEl.textContent = (data.topk !== undefined && data.topk !== null) ? data.topk : '—';
+                if (ctxEl) ctxEl.textContent = (data.context && data.context.length) ? data.context.join('\n') : '无';
+                if (contentEl) contentEl.textContent = data.answer || '';
+
+                if (backdrop) backdrop.style.display = 'flex';
+
+            } catch (err) {
+                console.error('获取消息详情失败', err);
+                alert('获取消息详情失败: ' + err.message);
+            }
+        }
+
+        function closeDetailModal() {
+            const backdrop = document.getElementById('detailBackdrop');
+            if (backdrop) backdrop.style.display = 'none';
         }
     </script>
 </body>
