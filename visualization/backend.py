@@ -86,11 +86,16 @@ def rag_answer(question: str) -> tuple:
     try:
         answer, context = rag_retrieve_and_generate(question)
         display_context = []
+        n = 1
         for c in (context or []):
             try:
                 law = c.get("law_name") or "未知法典"
                 art = c.get("law_article_num") or "?"
-                display_context.append(f"《{law}》第{art}条")
+                similarity = c.get("similarity") or 0.0
+                rerank_score = c.get("rerank_score") or 0.0
+                snippet = c.get("snippet") or ""
+                display_context.append(f"{n})《{law}》第{art}条，相似度: {similarity:.4f}, 重排分数: {rerank_score:.4f}，内容片段: {snippet}")
+                n += 1
             except Exception:
                 continue
         return answer, display_context
@@ -113,7 +118,8 @@ async def ask_question(request: QuestionRequest):
         # 如果没有提供会话ID，创建一个新的
         conversation_id = request.conversation_id or str(uuid.uuid4())[:8]
         print(f"使用的会话ID: {conversation_id}")
-
+        print(f"使用的topk: {request.topk}")
+        
         # 保存问题到txt文件（包含 topk 可选字段）
         question_data = {
             "question": request.question,
@@ -187,7 +193,15 @@ def save_to_txt(message_data: dict, message_type: str, conversation_id: str = No
             elif message_type == "answer":
                 f.write(f"问题: {message_data['question']}\n")
                 f.write(f"回答: {message_data['answer']}\n")
-                f.write(f"上下文: {', '.join(message_data.get('context', []))}\n")
+                # 将上下文按行写入，保持与示例 txt 文件中相似的格式（每条一行）
+                contexts = message_data.get('context', []) or []
+                if contexts:
+                    f.write("上下文: \n")
+                    for c in contexts:
+                        # 每个上下文本身可能为多段文本，直接写一行
+                        f.write(f"{c}\n")
+                else:
+                    f.write("上下文: \n")
                 # 若存在 topk，则记录
                 if message_data.get('topk') is not None:
                     f.write(f"topk: {message_data.get('topk')}\n")
@@ -212,13 +226,16 @@ def parse_message_from_file(filepath):
         question = re.search(r'问题: (.+)', content)
         # 使用 re.DOTALL 标志来匹配多行回答
         answer = re.search(r'回答: ([\s\S]+?)(?=\n上下文:|\ntopk:|$)', content)
-        context_match = re.search(r'上下文: (.+)', content)
+        # 捕获从 '上下文:' 开始直到下一节 'topk:' 或文件末尾的多行块
+        context_block = re.search(r'上下文:\s*([\s\S]*?)(?=\ntopk:|\Z)', content)
         topk_match = re.search(r'^topk:\s*(.+)$', content, flags=re.MULTILINE)
 
         context_list = []
-        if context_match:
-            raw = context_match.group(1).strip()
-            context_list = [c.strip() for c in raw.split(',') if c.strip()]
+        if context_block:
+            raw_block = context_block.group(1).strip()
+            # 将多行块按行拆分，保留非空行
+            lines = [ln.strip() for ln in raw_block.splitlines() if ln.strip()]
+            context_list = lines
 
         topk_val = None
         if topk_match:
