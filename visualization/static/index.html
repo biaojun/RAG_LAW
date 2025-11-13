@@ -497,9 +497,21 @@
         <div id="modalBackdrop" class="modal-backdrop">
             <div class="modal">
                 <h3>调整 TopK（0.0 - 1.0）</h3>
-                <div style="font-size:13px;color:#666;margin-bottom:8px;">滑块步进 0.1，当前值: <span id="topkDisplay">0.5</span></div>
+                <div style="font-size:13px;color:#666;margin-bottom:8px;">滑块步进 0.1，当前 TopK 值: <span id="topkDisplay">0.5</span></div>
                 <div class="controls">
                     <input id="topkSlider" type="range" min="0" max="1" step="0.1" value="0.5" style="flex:1" oninput="updateSliderDisplay(this.value)" />
+                </div>
+
+                <!-- 新增 TopP 控件 -->
+                <div style="font-size:13px;color:#666;margin-top:10px;margin-bottom:8px;">TopP（0.0 - 1.0）: <span id="topPDisplay">0.9</span></div>
+                <div class="controls">
+                    <input id="topPSlider" type="range" min="0" max="1" step="0.1" value="0.9" style="flex:1" oninput="updateTopPDisplay(this.value)" />
+                </div>
+
+                <!-- 新增 Temperature 控件 -->
+                <div style="font-size:13px;color:#666;margin-top:10px;margin-bottom:8px;">Temperature（0.0 - 1.0）: <span id="temperatureDisplay">0.7</span></div>
+                <div class="controls">
+                    <input id="temperatureSlider" type="range" min="0" max="1" step="0.1" value="0.7" style="flex:1" oninput="updateTempDisplay(this.value)" />
                 </div>
                 <div class="actions">
                     <button onclick="closeSettings()">取消</button>
@@ -514,6 +526,9 @@
                 <h3>消息详情</h3>
                 <div style="margin-bottom:8px;font-size:13px;color:#555;"><strong>ID:</strong> <span id="detailMessageId"></span> &nbsp; <strong>类型:</strong> <span id="detailMessageType"></span></div>
                 <div style="margin-bottom:8px;"><strong>TopK:</strong> <span id="detailTopk">—</span></div>
+                <div style="margin-bottom:8px;"><strong>TopP:</strong> <span id="detailTopP">—</span></div>
+                <div style="margin-bottom:8px;"><strong>Temperature:</strong> <span id="detailTemperature">—</span></div>
+
                 <div style="margin-bottom:8px;"><strong>上下文:</strong>
                     <pre id="detailContext" style="background:#fafafa;border:1px solid #eee;padding:8px;border-radius:6px;max-height:120px;overflow:auto">无</pre>
                 </div>
@@ -530,13 +545,17 @@
         /*************************************************************************
          * 常量与页面状态
          *************************************************************************/
-        const API_BASE = '/api';
-        // 当前会话 id（null 表示未选择/新会话）
-        let currentConversationId = null;
-        // topk 当前值（0.0 - 1.0），从 localStorage 中读取，默认 0.5
-        let currentTopK = parseFloat(localStorage.getItem('topk')) || 0.5;
-        // 会话列表缓存
-        let conversations = [];
+    const API_BASE = '/api';
+    // 当前会话 id（null 表示未选择/新会话）
+    let currentConversationId = null;
+    // topk 当前值（0.0 - 1.0），从 localStorage 中读取，默认 0.5
+    let currentTopK = parseFloat(localStorage.getItem('topk')) || 0.5;
+    // TopP 当前值（0.0 - 1.0），默认 0.9
+    let currentTopP = parseFloat(localStorage.getItem('topP')) || 0.9;
+    // Temperature 当前值（0.0 - 1.0），默认 0.7
+    let currentTemperature = parseFloat(localStorage.getItem('temperature')) || 0.7;
+    // 会话列表缓存
+    let conversations = [];
 
         /*************************************************************************
          * 页面初始化
@@ -544,11 +563,21 @@
          * - 加载会话列表并设置输入监听
          *************************************************************************/
         document.addEventListener('DOMContentLoaded', function() {
-            // ensure modal display shows currentTopK
+            // ensure modal display shows currentTopK / TopP / Temperature
             const disp = document.getElementById('topkDisplay');
             if (disp) disp.textContent = currentTopK.toFixed(1);
             const slider = document.getElementById('topkSlider');
             if (slider) slider.value = currentTopK;
+
+            const topPDisp = document.getElementById('topPDisplay');
+            if (topPDisp) topPDisp.textContent = currentTopP.toFixed(1);
+            const topPSlider = document.getElementById('topPSlider');
+            if (topPSlider) topPSlider.value = currentTopP;
+
+            const tempDisp = document.getElementById('temperatureDisplay');
+            if (tempDisp) tempDisp.textContent = currentTemperature.toFixed(1);
+            const tempSlider = document.getElementById('temperatureSlider');
+            if (tempSlider) tempSlider.value = currentTemperature;
 
             // 加载会话并设置事件
             loadConversations();
@@ -605,13 +634,39 @@
             if (disp) disp.textContent = parseFloat(val).toFixed(1);
         }
 
+        // 更新 TopP 显示（滑块 oninput 调用）
+        function updateTopPDisplay(val) {
+            const disp = document.getElementById('topPDisplay');
+            if (disp) disp.textContent = parseFloat(val).toFixed(1);
+        }
+
+        // 更新 Temperature 显示（滑块 oninput 调用）
+        function updateTempDisplay(val) {
+            const disp = document.getElementById('temperatureDisplay');
+            if (disp) disp.textContent = parseFloat(val).toFixed(1);
+        }
+
         // 保存设置到 localStorage（并关闭弹窗）
         function saveSettings() {
             const slider = document.getElementById('topkSlider');
             if (!slider) return;
             currentTopK = parseFloat(slider.value);
-            // 存本地，后续发送请求时会包含 topk
+            // 存本地，后续发送请求时会包含 topk、topP、temperature
             localStorage.setItem('topk', currentTopK.toFixed(1));
+
+            // TopP
+            const topPSlider = document.getElementById('topPSlider');
+            if (topPSlider) {
+                currentTopP = parseFloat(topPSlider.value);
+                localStorage.setItem('topP', currentTopP.toFixed(1));
+            }
+
+            // Temperature
+            const tempSlider = document.getElementById('temperatureSlider');
+            if (tempSlider) {
+                currentTemperature = parseFloat(tempSlider.value);
+                localStorage.setItem('temperature', currentTemperature.toFixed(1));
+            }
             closeSettings();
         }
 
@@ -845,7 +900,10 @@
                 // 请求体：包含问题、可选会话 id、以及 topk
                 const requestData = { question: question };
                 if (currentConversationId) requestData.conversation_id = currentConversationId;
+                // 包含用户可配置的参数：topk、topP、temperature
                 requestData.topk = currentTopK;
+                requestData.topP = currentTopP;
+                requestData.temperature = currentTemperature;
 
                 console.log('发送请求数据:', requestData);
 
@@ -1016,6 +1074,11 @@
                 if (idEl) idEl.textContent = data.id || '';
                 if (typeEl) typeEl.textContent = 'answer';
                 if (topkEl) topkEl.textContent = (data.topk !== undefined && data.topk !== null) ? data.topk : '—';
+                // 填充新增的 TopP 与 Temperature 显示
+                const topPEl = document.getElementById('detailTopP');
+                const tempEl = document.getElementById('detailTemperature');
+                if (topPEl) topPEl.textContent = (data.topP !== undefined && data.topP !== null) ? data.topP : '—';
+                if (tempEl) tempEl.textContent = (data.temperature !== undefined && data.temperature !== null) ? data.temperature : '—';
                 if (ctxEl) ctxEl.textContent = (data.context && data.context.length) ? data.context.join('\n') : '无';
                 if (contentEl) contentEl.textContent = data.answer || '';
 

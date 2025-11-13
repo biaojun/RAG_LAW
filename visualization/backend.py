@@ -39,6 +39,8 @@ class QuestionRequest(BaseModel):
     question: str
     conversation_id: Optional[str] = None
     topk: Optional[float] = None
+    topP: Optional[float] = None
+    temperature: Optional[float] = None
 
 
 class QuestionResponse(BaseModel):
@@ -118,14 +120,16 @@ async def ask_question(request: QuestionRequest):
         # 如果没有提供会话ID，创建一个新的
         conversation_id = request.conversation_id or str(uuid.uuid4())[:8]
         print(f"使用的会话ID: {conversation_id}")
-        print(f"使用的topk: {request.topk}")
+        print(f"使用的topk: {request.topk}, topP: {request.topP}, temperature: {request.temperature}")
         
         # 保存问题到txt文件（包含 topk 可选字段）
         question_data = {
             "question": request.question,
             "message_id": message_id,
             "timestamp": timestamp,
-            "topk": getattr(request, 'topk', None)
+            "topk": getattr(request, 'topk', None),
+            "topP": getattr(request, 'topP', None),
+            "temperature": getattr(request, 'temperature', None)
         }
         save_to_txt(question_data, "question", conversation_id)
 
@@ -151,7 +155,9 @@ async def ask_question(request: QuestionRequest):
             "context": context,
             "message_id": message_id,
             "timestamp": timestamp,
-            "topk": getattr(request, 'topk', None)
+            "topk": getattr(request, 'topk', None),
+            "topP": getattr(request, 'topP', None),
+            "temperature": getattr(request, 'temperature', None)
         }
         save_to_txt(answer_data, "answer", conversation_id)
 
@@ -190,6 +196,11 @@ def save_to_txt(message_data: dict, message_type: str, conversation_id: str = No
                 # 若存在 topk，则记录
                 if message_data.get('topk') is not None:
                     f.write(f"topk: {message_data.get('topk')}\n")
+                # 记录 topP 与 temperature（如果存在）
+                if message_data.get('topP') is not None:
+                    f.write(f"topP: {message_data.get('topP')}\n")
+                if message_data.get('temperature') is not None:
+                    f.write(f"temperature: {message_data.get('temperature')}\n")
             elif message_type == "answer":
                 f.write(f"问题: {message_data['question']}\n")
                 f.write(f"回答: {message_data['answer']}\n")
@@ -205,6 +216,11 @@ def save_to_txt(message_data: dict, message_type: str, conversation_id: str = No
                 # 若存在 topk，则记录
                 if message_data.get('topk') is not None:
                     f.write(f"topk: {message_data.get('topk')}\n")
+                # 记录 topP 与 temperature（如果存在）
+                if message_data.get('topP') is not None:
+                    f.write(f"topP: {message_data.get('topP')}\n")
+                if message_data.get('temperature') is not None:
+                    f.write(f"temperature: {message_data.get('temperature')}\n")
                 
 
         print(f"消息已保存: {filepath}")
@@ -226,9 +242,11 @@ def parse_message_from_file(filepath):
         question = re.search(r'问题: (.+)', content)
         # 使用 re.DOTALL 标志来匹配多行回答
         answer = re.search(r'回答: ([\s\S]+?)(?=\n上下文:|\ntopk:|$)', content)
-        # 捕获从 '上下文:' 开始直到下一节 'topk:' 或文件末尾的多行块
-        context_block = re.search(r'上下文:\s*([\s\S]*?)(?=\ntopk:|\Z)', content)
+        # 捕获从 '上下文:' 开始直到下一节 ('topk:'/'topP:'/'temperature:') 或文件末尾的多行块
+        context_block = re.search(r'上下文:\s*([\s\S]*?)(?=\ntopk:|\ntopP:|\ntemperature:|\Z)', content)
         topk_match = re.search(r'^topk:\s*(.+)$', content, flags=re.MULTILINE)
+        topP_match = re.search(r'^topP:\s*(.+)$', content, flags=re.MULTILINE)
+        temperature_match = re.search(r'^temperature:\s*(.+)$', content, flags=re.MULTILINE)
 
         context_list = []
         if context_block:
@@ -244,6 +262,20 @@ def parse_message_from_file(filepath):
             except Exception:
                 topk_val = topk_match.group(1).strip()
 
+        topP_val = None
+        if topP_match:
+            try:
+                topP_val = float(topP_match.group(1).strip())
+            except Exception:
+                topP_val = topP_match.group(1).strip()
+
+        temperature_val = None
+        if temperature_match:
+            try:
+                temperature_val = float(temperature_match.group(1).strip())
+            except Exception:
+                temperature_val = temperature_match.group(1).strip()
+
         return {
             'id': message_id.group(1) if message_id else os.path.basename(filepath),
             'type': message_type.group(1) if message_type else 'unknown',
@@ -252,6 +284,8 @@ def parse_message_from_file(filepath):
             'answer': answer.group(1).strip() if answer else '',
             'context': context_list,
             'topk': topk_val,
+            'topP': topP_val,
+            'temperature': temperature_val,
             'filepath': filepath
         }
     except Exception as e:
@@ -400,6 +434,8 @@ async def get_message_detail(conversation_id: str, message_id: str):
                     "answer": parsed.get('answer'),
                     "context": parsed.get('context', []),
                     "topk": parsed.get('topk'),
+                    "topP": parsed.get('topP'),
+                    "temperature": parsed.get('temperature'),
                     "filepath": parsed.get('filepath')
                 }
 
