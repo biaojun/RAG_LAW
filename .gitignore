@@ -3,3 +3,38 @@ data_processing/*_db
 data_processing/__pycache__
 data_processing/formal_*
 .vscode
+ 
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+.env
+
+# IDE/Editor
+.idea/
+
+# Logs
+*.log
+
+# Local databases (ignore large vector stores)
+chroma_legal_db/
+law_chroma_db/
+law_case_chroma_db/
+
+# SQLite databases
+*.sqlite3
+
+# App runtime data
+visualization/chat_data/
+
+# Caches / build
+.cache/
+dist/
+build/
