@@ -238,6 +238,26 @@
             position: relative;
         }
 
+        /* 设置按钮（位于输入区域外侧左侧） */
+        /* 设置按钮（位于输入区域外侧左侧） */
+        /* 此按钮打开 TopK 设置模态窗，位置通过绝对定位放到输入框左侧 */
+        .settings-button {
+            position: absolute;
+            left: -48px; /* 使其位于输入框外部左侧 */
+            bottom: 20px;
+            background: #ffffff;
+            color: #333;
+            border: 1px solid #e5e5e7;
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        }
+
         #questionInput {
             width: 100%;
             /* left padding increased to make room for upload button */
@@ -259,6 +279,7 @@
             box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.1);
         }
         /* 发送按钮位置 */
+        /* 发送按钮位置：右下角，触发 sendQuestion() */
         .send-button {
             position: absolute;
             right: 12px;
@@ -276,6 +297,7 @@
             transition: background-color 0.2s;
         }
         /* 上传按钮位置 */
+        /* 上传按钮（左侧）: 点击会触发表单隐藏的 file input */
         .upload-button {
             position: absolute;
             left: 16px;
@@ -291,6 +313,33 @@
             align-items: center;
             justify-content: center;
         }
+
+        /* 简单模态弹窗样式（用于 TopK 设置） */
+        .modal-backdrop {
+            position: fixed;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal {
+            background: white;
+            padding: 18px;
+            border-radius: 8px;
+            width: 320px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+
+        .modal h3 { margin-bottom: 8px; }
+        .modal .controls { display:flex; gap:12px; align-items:center; }
+        .modal .actions { margin-top: 12px; text-align: right; }
+        .modal .actions button { margin-left: 8px; }
 
         .send-button:hover:not(:disabled) {
             background: #0d8c6c;
@@ -349,6 +398,44 @@
             border: 1px solid #fecaca;
             font-size: 14px;
         }
+
+        /* 详情放大镜按钮：位于 AI avatar 下方，点击触发查看消息详情 */
+        .detail-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            padding: 4px;
+            margin: 0;
+            line-height: 1;
+        }
+
+        /* 详情模态（展示消息详情：ID / topk / 上下文 / 回答内容） */
+        .detail-backdrop {
+            position: fixed;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2100;
+        }
+
+        .detail-modal {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            width: 480px;
+            max-width: 95%;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            font-size: 14px;
+        }
+
+        .detail-modal pre { white-space: pre-wrap; word-break: break-word; }
     </style>
 </head>
 <body>
@@ -368,6 +455,7 @@
 
         <!-- 主内容区域 -->
         <div class="main-content">
+            <!-- 顶部标题栏 -->
             <div class="chat-header">
                 <h1>RAG-based Knowledge Base QA System</h1>
             </div>
@@ -379,39 +467,129 @@
                 </div>
             </div>
 
+            <!-- 底部输入区：包含设置按钮、上传文件按钮、问题输入框、发送按钮 -->
             <div class="input-area">
                 <div class="input-container">
-                        <!-- 上传按钮（隐藏真实 file input） -->
-                        <input type="file" id="fileInput" accept=".txt,.csv" style="display:none" onchange="uploadFile()" />
-                        <button id="uploadButton" class="upload-button" title="上传文件(.txt/.csv)" onclick="document.getElementById('fileInput').click()">📎</button>
+                    <!-- 设置按钮：打开 TopK 设置弹窗 -->
+                    <button id="settingsButton" class="settings-button" title="设置">⚙️</button>
 
-                        <textarea 
-                            id="questionInput" 
-                            placeholder="输入您的问题..." 
-                            rows="1"
-                        ></textarea>
-                        <button id="sendButton" class="send-button" onclick="sendQuestion()">
-                            ↑
-                        </button>
+                    <!-- 隐藏的 file input：只接受 .txt 和 .csv，change 时调用 uploadFile() -->
+                    <input type="file" id="fileInput" accept=".txt,.csv" style="display:none" onchange="uploadFile()" />
+                    <!-- 可见的上传按钮：点击时触发隐藏 input 的点击 -->
+                    <button id="uploadButton" class="upload-button" title="上传文件(.txt/.csv)" onclick="document.getElementById('fileInput').click()">📎</button>
+
+                    <!-- 问题输入区（可多行） -->
+                    <textarea 
+                        id="questionInput" 
+                        placeholder="输入您的问题..." 
+                        rows="1"
+                    ></textarea>
+                    <!-- 发送按钮：点击发送问题 -->
+                    <button id="sendButton" class="send-button" onclick="sendQuestion()">
+                        ↑
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        const API_BASE = '/api';
-        let currentConversationId = null;
-        let conversations = [];
+        <!-- 设置模态弹窗（TopK） -->
+        <div id="modalBackdrop" class="modal-backdrop">
+            <div class="modal">
+                <h3>调整 TopK（0.0 - 1.0）</h3>
+                <div style="font-size:13px;color:#666;margin-bottom:8px;">滑块步进 0.1，当前 TopK 值: <span id="topkDisplay">0.5</span></div>
+                <div class="controls">
+                    <input id="topkSlider" type="range" min="0" max="1" step="0.1" value="0.5" style="flex:1" oninput="updateSliderDisplay(this.value)" />
+                </div>
 
-        // 初始化
+                <!-- 新增 TopP 控件 -->
+                <div style="font-size:13px;color:#666;margin-top:10px;margin-bottom:8px;">TopP（0.0 - 1.0）: <span id="topPDisplay">0.9</span></div>
+                <div class="controls">
+                    <input id="topPSlider" type="range" min="0" max="1" step="0.1" value="0.9" style="flex:1" oninput="updateTopPDisplay(this.value)" />
+                </div>
+
+                <!-- 新增 Temperature 控件 -->
+                <div style="font-size:13px;color:#666;margin-top:10px;margin-bottom:8px;">Temperature（0.0 - 1.0）: <span id="temperatureDisplay">0.7</span></div>
+                <div class="controls">
+                    <input id="temperatureSlider" type="range" min="0" max="1" step="0.1" value="0.7" style="flex:1" oninput="updateTempDisplay(this.value)" />
+                </div>
+                <div class="actions">
+                    <button onclick="closeSettings()">取消</button>
+                    <button onclick="saveSettings()">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详情模态弹窗：展示单条回答的详细信息（id/topk/上下文/回答内容） -->
+        <div id="detailBackdrop" class="detail-backdrop">
+            <div class="detail-modal">
+                <h3>消息详情</h3>
+                <div style="margin-bottom:8px;font-size:13px;color:#555;"><strong>ID:</strong> <span id="detailMessageId"></span> &nbsp; <strong>类型:</strong> <span id="detailMessageType"></span></div>
+                <div style="margin-bottom:8px;"><strong>TopK:</strong> <span id="detailTopk">—</span></div>
+                <div style="margin-bottom:8px;"><strong>TopP:</strong> <span id="detailTopP">—</span></div>
+                <div style="margin-bottom:8px;"><strong>Temperature:</strong> <span id="detailTemperature">—</span></div>
+
+                <div style="margin-bottom:8px;"><strong>上下文:</strong>
+                    <pre id="detailContext" style="background:#fafafa;border:1px solid #eee;padding:8px;border-radius:6px;max-height:120px;overflow:auto">无</pre>
+                </div>
+                <div><strong>回答内容:</strong>
+                    <pre id="detailContent" style="background:#fafafa;border:1px solid #eee;padding:10px;border-radius:6px;max-height:320px;overflow:auto">-</pre>
+                </div>
+                <div style="text-align:right;margin-top:10px">
+                    <button onclick="closeDetailModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+    <script>
+        /*************************************************************************
+         * 常量与页面状态
+         *************************************************************************/
+    const API_BASE = '/api';
+    // 当前会话 id（null 表示未选择/新会话）
+    let currentConversationId = null;
+    // topk 当前值（0.0 - 1.0），从 localStorage 中读取，默认 0.5
+    let currentTopK = parseFloat(localStorage.getItem('topk')) || 0.5;
+    // TopP 当前值（0.0 - 1.0），默认 0.9
+    let currentTopP = parseFloat(localStorage.getItem('topP')) || 0.9;
+    // Temperature 当前值（0.0 - 1.0），默认 0.7
+    let currentTemperature = parseFloat(localStorage.getItem('temperature')) || 0.7;
+    // 会话列表缓存
+    let conversations = [];
+
+        /*************************************************************************
+         * 页面初始化
+         * - 将 currentTopK 显示到滑块和文本
+         * - 加载会话列表并设置输入监听
+         *************************************************************************/
         document.addEventListener('DOMContentLoaded', function() {
+            // ensure modal display shows currentTopK / TopP / Temperature
+            const disp = document.getElementById('topkDisplay');
+            if (disp) disp.textContent = currentTopK.toFixed(1);
+            const slider = document.getElementById('topkSlider');
+            if (slider) slider.value = currentTopK;
+
+            const topPDisp = document.getElementById('topPDisplay');
+            if (topPDisp) topPDisp.textContent = currentTopP.toFixed(1);
+            const topPSlider = document.getElementById('topPSlider');
+            if (topPSlider) topPSlider.value = currentTopP;
+
+            const tempDisp = document.getElementById('temperatureDisplay');
+            if (tempDisp) tempDisp.textContent = currentTemperature.toFixed(1);
+            const tempSlider = document.getElementById('temperatureSlider');
+            if (tempSlider) tempSlider.value = currentTemperature;
+
+            // 加载会话并设置事件
             loadConversations();
             setupEventListeners();
         });
 
+        // 为输入框绑定回车发送和自适应高度
         function setupEventListeners() {
             const input = document.getElementById('questionInput');
-            
+            if (!input) return;
+
+            // 回车（不带 Shift）发送问题
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -419,13 +597,83 @@
                 }
             });
 
+            // 根据内容自动调整高度，最大 120px
             input.addEventListener('input', function() {
                 this.style.height = 'auto';
                 this.style.height = Math.min(this.scrollHeight, 120) + 'px';
             });
         }
 
-        // 开始新对话
+        /*************************************************************************
+         * TopK 设置相关函数（打开/关闭/显示/保存）
+         *************************************************************************/
+        // 打开设置弹窗（外部调用）
+        document.getElementById('settingsButton').addEventListener('click', function() {
+            openSettings();
+        });
+
+        // 打开并将当前值回填到滑块
+        function openSettings() {
+            const backdrop = document.getElementById('modalBackdrop');
+            const slider = document.getElementById('topkSlider');
+            const disp = document.getElementById('topkDisplay');
+            if (slider) slider.value = currentTopK;
+            if (disp) disp.textContent = parseFloat(currentTopK).toFixed(1);
+            if (backdrop) backdrop.style.display = 'flex';
+        }
+
+        // 关闭设置弹窗
+        function closeSettings() {
+            const backdrop = document.getElementById('modalBackdrop');
+            if (backdrop) backdrop.style.display = 'none';
+        }
+
+        // 滑块变化时更新显示文本（仅视图）
+        function updateSliderDisplay(val) {
+            const disp = document.getElementById('topkDisplay');
+            if (disp) disp.textContent = parseFloat(val).toFixed(1);
+        }
+
+        // 更新 TopP 显示（滑块 oninput 调用）
+        function updateTopPDisplay(val) {
+            const disp = document.getElementById('topPDisplay');
+            if (disp) disp.textContent = parseFloat(val).toFixed(1);
+        }
+
+        // 更新 Temperature 显示（滑块 oninput 调用）
+        function updateTempDisplay(val) {
+            const disp = document.getElementById('temperatureDisplay');
+            if (disp) disp.textContent = parseFloat(val).toFixed(1);
+        }
+
+        // 保存设置到 localStorage（并关闭弹窗）
+        function saveSettings() {
+            const slider = document.getElementById('topkSlider');
+            if (!slider) return;
+            currentTopK = parseFloat(slider.value);
+            // 存本地，后续发送请求时会包含 topk、topP、temperature
+            localStorage.setItem('topk', currentTopK.toFixed(1));
+
+            // TopP
+            const topPSlider = document.getElementById('topPSlider');
+            if (topPSlider) {
+                currentTopP = parseFloat(topPSlider.value);
+                localStorage.setItem('topP', currentTopP.toFixed(1));
+            }
+
+            // Temperature
+            const tempSlider = document.getElementById('temperatureSlider');
+            if (tempSlider) {
+                currentTemperature = parseFloat(tempSlider.value);
+                localStorage.setItem('temperature', currentTemperature.toFixed(1));
+            }
+            closeSettings();
+        }
+
+        /*************************************************************************
+         * 会话管理：新对话 / 加载会话 / 删除会话
+         *************************************************************************/
+        // 开始新对话：清空聊天区并刷新会话列表
         function startNewChat() {
             currentConversationId = null;
             document.getElementById('chatContainer').innerHTML = `
@@ -439,7 +687,7 @@
             loadConversations();
         }
 
-        // 加载会话列表
+        // 从后端获取会话列表并渲染
         async function loadConversations() {
             try {
                 const response = await fetch('/api/conversations');
@@ -454,10 +702,11 @@
             }
         }
 
-        // 渲染会话列表
+        // 渲染侧边栏会话列表（点击加载）
         function renderConversations() {
             const container = document.getElementById('conversationsList');
-            
+            if (!container) return;
+
             if (conversations.length === 0) {
                 container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666; font-size: 14px;">暂无对话记录</div>';
                 return;
@@ -475,7 +724,7 @@
             `).join('');
         }
 
-        // 删除会话
+        // 删除会话（调用后端），成功后刷新会话列表
         async function deleteConversation(conversationId) {
             if (!confirm('确定要删除这个会话吗？此操作不可恢复。')) {
                 return;
@@ -490,7 +739,7 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                // 如果删除的是当前会话，清空聊天区域
+                // 如果删除的是当前会话，则清空聊天区
                 if (currentConversationId === conversationId) {
                     currentConversationId = null;
                     document.getElementById('chatContainer').innerHTML = `
@@ -503,14 +752,13 @@
 
                 // 重新加载会话列表
                 await loadConversations();
-                
             } catch (error) {
                 console.error('删除会话失败:', error);
                 alert('删除会话失败: ' + error.message);
             }
         }
 
-        // 加载特定会话
+        // 加载某个会话并渲染其消息
         async function loadConversation(conversationId) {
             try {
                 const response = await fetch(`/api/conversation/${conversationId}`);
@@ -518,7 +766,7 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                
+
                 currentConversationId = conversationId;
                 renderMessages(data.messages);
                 updateConversationSelection();
@@ -528,10 +776,14 @@
             }
         }
 
-        // 渲染消息
+        /*************************************************************************
+         * 消息渲染与交互
+         *************************************************************************/
+        // 渲染消息列表（支持用户消息与 AI 回答），AI 回答在 avatar 下方带详情按钮
         function renderMessages(messages) {
             const container = document.getElementById('chatContainer');
-            
+            if (!container) return;
+
             if (messages.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state" id="emptyState">
@@ -542,28 +794,47 @@
                 return;
             }
 
-            container.innerHTML = messages.map(msg => `
-                <div class="message ${msg.type === 'question' ? 'user-message' : 'assistant-message'}">
-                    <div class="message-user">
-                        <div class="message-avatar ${msg.type === 'question' ? 'user-avatar' : 'assistant-avatar'}">
-                            ${msg.type === 'question' ? '你' : 'AI'}
+            container.innerHTML = messages.map(msg => {
+                if (msg.type === 'question') {
+                    // 用户消息：右对齐样式
+                    return `
+                        <div class="message user-message">
+                            <div class="message-user">
+                                <div class="message-avatar user-avatar">你</div>
+                                <div class="message-content">
+                                    <div class="message-text">${msg.content}</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="message-content">
-                            <div class="message-text">${msg.content}</div>
+                    `;
+                } else {
+                    // assistant message：avatar 与详情按钮垂直排列，详情按钮调用 viewMessageDetail(messageId)
+                    return `
+                        <div class="message assistant-message">
+                            <div class="message-user">
+                                <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                                    <div class="message-avatar assistant-avatar">AI</div>
+                                    <button class="detail-btn" title="查看详情" onclick="viewMessageDetail('${msg.id}')">🔍</button>
+                                </div>
+                                <div class="message-content">
+                                    <div class="message-text">${msg.content}</div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            `).join('');
+                    `;
+                }
+            }).join('');
 
+            // 滚动到底部
             container.scrollTop = container.scrollHeight;
         }
 
-        // 更新会话选择状态
+        // 更新侧栏的选中样式
         function updateConversationSelection() {
             document.querySelectorAll('.conversation-item').forEach(item => {
                 item.classList.remove('active');
             });
-            
+
             if (currentConversationId) {
                 const activeItem = document.querySelector(`[onclick="loadConversation('${currentConversationId}')"]`);
                 if (activeItem) {
@@ -572,7 +843,11 @@
             }
         }
 
-        // 发送问题
+        /*************************************************************************
+         * 发送问题到后端 (/api/ask)
+         * - 输入：question（字符串），可选 conversation_id
+         * - 输出：后端返回的 answer 和 conversation_id（新建会话时）
+         *************************************************************************/
         async function sendQuestion() {
             const input = document.getElementById('questionInput');
             const button = document.getElementById('sendButton');
@@ -580,18 +855,18 @@
 
             if (!question) return;
 
-            // 禁用输入和按钮
+            // 禁用输入和按钮以防重复提交
             input.disabled = true;
             button.disabled = true;
 
             try {
-                // 隐藏空状态
+                // 隐藏空状态提示
                 const emptyState = document.getElementById('emptyState');
                 if (emptyState) emptyState.style.display = 'none';
 
                 const container = document.getElementById('chatContainer');
 
-                // 添加用户消息
+                // 立即在界面上追加用户消息（本地渲染）
                 container.innerHTML += `
                     <div class="message user-message">
                         <div class="message-user">
@@ -603,7 +878,7 @@
                     </div>
                 `;
 
-                // 添加AI回复占位符
+                // 添加 AI 占位（typing indicator）以改善体验
                 const messageId = 'temp_' + Date.now();
                 container.innerHTML += `
                     <div class="message assistant-message" id="${messageId}">
@@ -622,24 +897,20 @@
 
                 container.scrollTop = container.scrollHeight;
 
-                // 准备请求数据
-                const requestData = {
-                    question: question
-                };
-                
-                // 只有在有当前会话时才发送conversation_id
-                if (currentConversationId) {
-                    requestData.conversation_id = currentConversationId;
-                }
+                // 请求体：包含问题、可选会话 id、以及 topk
+                const requestData = { question: question };
+                if (currentConversationId) requestData.conversation_id = currentConversationId;
+                // 包含用户可配置的参数：topk、topP、temperature
+                requestData.topk = currentTopK;
+                requestData.topP = currentTopP;
+                requestData.temperature = currentTemperature;
 
                 console.log('发送请求数据:', requestData);
 
-                // 发送请求
+                // 向后端发送请求
                 const response = await fetch(`${API_BASE}/ask`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestData)
                 });
 
@@ -650,27 +921,30 @@
                 }
 
                 const data = await response.json();
+                // 后端返回 conversation_id（新会话或现有会话）
                 currentConversationId = data.conversation_id;
 
-                // 更新AI回复
+                // 将占位消息替换为真实回答
                 const aiMessage = document.getElementById(messageId);
-                aiMessage.innerHTML = `
-                    <div class="message-user">
-                        <div class="message-avatar assistant-avatar">AI</div>
-                        <div class="message-content">
-                            <div class="message-text">${data.answer}</div>
+                if (aiMessage) {
+                    aiMessage.innerHTML = `
+                        <div class="message-user">
+                            <div class="message-avatar assistant-avatar">AI</div>
+                            <div class="message-content">
+                                <div class="message-text">${data.answer}</div>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
 
-                // 重新加载会话列表
+                // 重新加载会话列表以反映最新会话/标题变化
                 await loadConversations();
 
             } catch (error) {
                 console.error('Error:', error);
                 showError('发送失败: ' + error.message);
-                
-                // 移除加载指示器
+
+                // 若失败则将占位消息替换为错误提示
                 const tempMessage = document.getElementById(messageId);
                 if (tempMessage) {
                     tempMessage.innerHTML = `
@@ -683,7 +957,7 @@
                     `;
                 }
             } finally {
-                // 恢复输入和按钮
+                // 恢复输入状态
                 input.disabled = false;
                 button.disabled = false;
                 input.value = '';
@@ -692,7 +966,11 @@
             }
         }
 
-        // 上传文件并保存到后端（visualization/chat_files）
+        /*************************************************************************
+         * 上传文件到后端 (/api/upload)
+         * - 验证扩展名（仅 .txt/.csv）
+         * - 使用 FormData 发送文件，后端保存到 visualization/chat_files
+         *************************************************************************/
         async function uploadFile() {
             const fileInput = document.getElementById('fileInput');
             if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
@@ -707,7 +985,7 @@
             }
 
             const container = document.getElementById('chatContainer');
-            // 显示上传占位
+            // 在聊天区显示上传占位
             const tempId = 'upload_' + Date.now();
             container.innerHTML += `
                 <div class="message assistant-message" id="${tempId}">
@@ -723,15 +1001,10 @@
 
             const formData = new FormData();
             formData.append('file', file, file.name);
-            if (currentConversationId) {
-                formData.append('conversation_id', currentConversationId);
-            }
+            if (currentConversationId) formData.append('conversation_id', currentConversationId);
 
             try {
-                const resp = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+                const resp = await fetch('/api/upload', { method: 'POST', body: formData });
 
                 const elem = document.getElementById(tempId);
                 if (!resp.ok) {
@@ -747,7 +1020,7 @@
                     elem.innerHTML = `\n                        <div class="message-user">\n                            <div class="message-avatar assistant-avatar">AI</div>\n                            <div class="message-content">\n                                <div class="message-text">文件上传成功: ${data.filename}</div>\n                            </div>\n                        </div>`;
                 }
 
-                // 重新加载会话列表（如果需要）
+                // 上传完成后可选择重新加载会话列表（如果文件触发了新的消息保存）
                 await loadConversations();
 
             } catch (err) {
@@ -761,7 +1034,7 @@
             }
         }
 
-        // 显示错误信息
+        // 通用错误展示函数：在聊天区追加一条错误提示
         function showError(message) {
             const container = document.getElementById('chatContainer');
             const errorDiv = document.createElement('div');
@@ -769,6 +1042,58 @@
             errorDiv.textContent = message;
             container.appendChild(errorDiv);
             container.scrollTop = container.scrollHeight;
+        }
+
+        /*************************************************************************
+         * 查看消息详情：向后端请求某个会话中某条消息的详细信息
+         * - URL: /api/conversation/{conv}/message/{msg}
+         * - 返回示例结构：{ id, question, answer, context: [..], topk }
+         *************************************************************************/
+        async function viewMessageDetail(messageId) {
+            if (!currentConversationId) {
+                alert('未选择会话，无法查看消息详情');
+                return;
+            }
+
+            try {
+                const resp = await fetch(`${API_BASE}/conversation/${currentConversationId}/message/${messageId}`);
+                if (!resp.ok) {
+                    const txt = await resp.text();
+                    throw new Error(`请求失败: ${resp.status} ${txt}`);
+                }
+                const data = await resp.json();
+
+                // 将返回的数据填充到详情模态中并显示
+                const backdrop = document.getElementById('detailBackdrop');
+                const idEl = document.getElementById('detailMessageId');
+                const typeEl = document.getElementById('detailMessageType');
+                const topkEl = document.getElementById('detailTopk');
+                const ctxEl = document.getElementById('detailContext');
+                const contentEl = document.getElementById('detailContent');
+
+                if (idEl) idEl.textContent = data.id || '';
+                if (typeEl) typeEl.textContent = 'answer';
+                if (topkEl) topkEl.textContent = (data.topk !== undefined && data.topk !== null) ? data.topk : '—';
+                // 填充新增的 TopP 与 Temperature 显示
+                const topPEl = document.getElementById('detailTopP');
+                const tempEl = document.getElementById('detailTemperature');
+                if (topPEl) topPEl.textContent = (data.topP !== undefined && data.topP !== null) ? data.topP : '—';
+                if (tempEl) tempEl.textContent = (data.temperature !== undefined && data.temperature !== null) ? data.temperature : '—';
+                if (ctxEl) ctxEl.textContent = (data.context && data.context.length) ? data.context.join('\n') : '无';
+                if (contentEl) contentEl.textContent = data.answer || '';
+
+                if (backdrop) backdrop.style.display = 'flex';
+
+            } catch (err) {
+                console.error('获取消息详情失败', err);
+                alert('获取消息详情失败: ' + err.message);
+            }
+        }
+
+        // 关闭详情模态
+        function closeDetailModal() {
+            const backdrop = document.getElementById('detailBackdrop');
+            if (backdrop) backdrop.style.display = 'none';
         }
     </script>
 </body>

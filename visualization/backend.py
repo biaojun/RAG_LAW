@@ -38,6 +38,9 @@ os.makedirs(STATIC_DIR, exist_ok=True)
 class QuestionRequest(BaseModel):
     question: str
     conversation_id: Optional[str] = None
+    topk: Optional[float] = None
+    topP: Optional[float] = None
+    temperature: Optional[float] = None
 
 
 class QuestionResponse(BaseModel):
@@ -83,16 +86,21 @@ def generate_answer(question: str) -> tuple:
 def rag_answer(question: str) -> tuple:
     """调用真实的 RAG 流程，并将上下文格式化为可展示的字符串列表。"""
     try:
-        answer, ctx = rag_retrieve_and_generate(question)
-        display_ctx = []
-        for c in (ctx or []):
+        answer, context = rag_retrieve_and_generate(question)
+        display_context = []
+        n = 1
+        for c in (context or []):
             try:
                 law = c.get("law_name") or "未知法典"
                 art = c.get("law_article_num") or "?"
-                display_ctx.append(f"《{law}》第{art}条")
+                similarity = c.get("similarity") or 0.0
+                rerank_score = c.get("rerank_score") or 0.0
+                snippet = c.get("snippet") or ""
+                display_context.append(f"{n})《{law}》第{art}条，相似度: {similarity:.4f}, 重排分数: {rerank_score:.4f}，内容片段: {snippet}")
+                n += 1
             except Exception:
                 continue
-        return answer, display_ctx
+        return answer, display_context
     except Exception as e:
         # 回退：不影响前端使用
         fallback_ans, fallback_ctx = generate_answer(question)
@@ -112,12 +120,16 @@ async def ask_question(request: QuestionRequest):
         # 如果没有提供会话ID，创建一个新的
         conversation_id = request.conversation_id or str(uuid.uuid4())[:8]
         print(f"使用的会话ID: {conversation_id}")
-
-        # 保存问题到txt文件
+        print(f"使用的topk: {request.topk}, topP: {request.topP}, temperature: {request.temperature}")
+        
+        # 保存问题到txt文件（包含 topk 可选字段）
         question_data = {
             "question": request.question,
             "message_id": message_id,
-            "timestamp": timestamp
+            "timestamp": timestamp,
+            "topk": getattr(request, 'topk', None),
+            "topP": getattr(request, 'topP', None),
+            "temperature": getattr(request, 'temperature', None)
         }
         save_to_txt(question_data, "question", conversation_id)
 
@@ -142,7 +154,10 @@ async def ask_question(request: QuestionRequest):
             "answer": answer,
             "context": context,
             "message_id": message_id,
-            "timestamp": timestamp
+            "timestamp": timestamp,
+            "topk": getattr(request, 'topk', None),
+            "topP": getattr(request, 'topP', None),
+            "temperature": getattr(request, 'temperature', None)
         }
         save_to_txt(answer_data, "answer", conversation_id)
 
@@ -178,10 +193,35 @@ def save_to_txt(message_data: dict, message_type: str, conversation_id: str = No
 
             if message_type == "question":
                 f.write(f"问题: {message_data['question']}\n")
+                # 若存在 topk，则记录
+                if message_data.get('topk') is not None:
+                    f.write(f"topk: {message_data.get('topk')}\n")
+                # 记录 topP 与 temperature（如果存在）
+                if message_data.get('topP') is not None:
+                    f.write(f"topP: {message_data.get('topP')}\n")
+                if message_data.get('temperature') is not None:
+                    f.write(f"temperature: {message_data.get('temperature')}\n")
             elif message_type == "answer":
                 f.write(f"问题: {message_data['question']}\n")
                 f.write(f"回答: {message_data['answer']}\n")
-                f.write(f"上下文: {', '.join(message_data.get('context', []))}\n")
+                # 将上下文按行写入，保持与示例 txt 文件中相似的格式（每条一行）
+                contexts = message_data.get('context', []) or []
+                if contexts:
+                    f.write("上下文: \n")
+                    for c in contexts:
+                        # 每个上下文本身可能为多段文本，直接写一行
+                        f.write(f"{c}\n")
+                else:
+                    f.write("上下文: \n")
+                # 若存在 topk，则记录
+                if message_data.get('topk') is not None:
+                    f.write(f"topk: {message_data.get('topk')}\n")
+                # 记录 topP 与 temperature（如果存在）
+                if message_data.get('topP') is not None:
+                    f.write(f"topP: {message_data.get('topP')}\n")
+                if message_data.get('temperature') is not None:
+                    f.write(f"temperature: {message_data.get('temperature')}\n")
+                
 
         print(f"消息已保存: {filepath}")
         return message_id
@@ -201,14 +241,51 @@ def parse_message_from_file(filepath):
         timestamp = re.search(r'时间: (.+)', content)
         question = re.search(r'问题: (.+)', content)
         # 使用 re.DOTALL 标志来匹配多行回答
-        answer = re.search(r'回答: ([\s\S]+?)(?=\n上下文:|$)', content)
+        answer = re.search(r'回答: ([\s\S]+?)(?=\n上下文:|\ntopk:|$)', content)
+        # 捕获从 '上下文:' 开始直到下一节 ('topk:'/'topP:'/'temperature:') 或文件末尾的多行块
+        context_block = re.search(r'上下文:\s*([\s\S]*?)(?=\ntopk:|\ntopP:|\ntemperature:|\Z)', content)
+        topk_match = re.search(r'^topk:\s*(.+)$', content, flags=re.MULTILINE)
+        topP_match = re.search(r'^topP:\s*(.+)$', content, flags=re.MULTILINE)
+        temperature_match = re.search(r'^temperature:\s*(.+)$', content, flags=re.MULTILINE)
+
+        context_list = []
+        if context_block:
+            raw_block = context_block.group(1).strip()
+            # 将多行块按行拆分，保留非空行
+            lines = [ln.strip() for ln in raw_block.splitlines() if ln.strip()]
+            context_list = lines
+
+        topk_val = None
+        if topk_match:
+            try:
+                topk_val = float(topk_match.group(1).strip())
+            except Exception:
+                topk_val = topk_match.group(1).strip()
+
+        topP_val = None
+        if topP_match:
+            try:
+                topP_val = float(topP_match.group(1).strip())
+            except Exception:
+                topP_val = topP_match.group(1).strip()
+
+        temperature_val = None
+        if temperature_match:
+            try:
+                temperature_val = float(temperature_match.group(1).strip())
+            except Exception:
+                temperature_val = temperature_match.group(1).strip()
 
         return {
             'id': message_id.group(1) if message_id else os.path.basename(filepath),
             'type': message_type.group(1) if message_type else 'unknown',
             'timestamp': timestamp.group(1) if timestamp else '',
             'question': question.group(1) if question else '',
-            'answer': answer.group(1) if answer else '',
+            'answer': answer.group(1).strip() if answer else '',
+            'context': context_list,
+            'topk': topk_val,
+            'topP': topP_val,
+            'temperature': temperature_val,
             'filepath': filepath
         }
     except Exception as e:
@@ -335,6 +412,40 @@ async def get_conversation_messages(conversation_id: str):
     except Exception as e:
         print(f"获取会话消息出错: {str(e)}")
         raise HTTPException(status_code=500, detail=f"获取会话消息时出错: {str(e)}")
+
+
+@app.get("/api/conversation/{conversation_id}/message/{message_id}")
+async def get_message_detail(conversation_id: str, message_id: str):
+    """返回特定消息（answer 类型）的详细解析：answer 文本、上下文列表、topk 和文件路径"""
+    try:
+        conversation_dir = os.path.join(DATA_DIR, conversation_id)
+        if not os.path.exists(conversation_dir):
+            raise HTTPException(status_code=404, detail=f"未找到会话: {conversation_id}")
+
+        # 遍历会话目录下的所有 txt 文件，找到 id 匹配且类型为 answer 的文件
+        for filepath in glob.glob(os.path.join(conversation_dir, "*.txt")):
+            parsed = parse_message_from_file(filepath)
+            if not parsed:
+                continue
+            if parsed.get('id') == message_id and parsed.get('type') == 'answer':
+                return {
+                    "id": parsed.get('id'),
+                    "question": parsed.get('question'),
+                    "answer": parsed.get('answer'),
+                    "context": parsed.get('context', []),
+                    "topk": parsed.get('topk'),
+                    "topP": parsed.get('topP'),
+                    "temperature": parsed.get('temperature'),
+                    "filepath": parsed.get('filepath')
+                }
+
+        raise HTTPException(status_code=404, detail=f"未找到消息: {message_id}")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"获取消息详情出错: {e}")
+        raise HTTPException(status_code=500, detail=f"获取消息详情出错: {str(e)}")
 
 
 @app.delete("/api/conversation/{conversation_id}")

@@ -2,5 +2,44 @@
 *_db
 data_processing/__pycache__
 data_processing/formal_*
+<<<<<<< HEAD
 __pycache__
 .vscode
+=======
+.vscode
+ 
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+.env
+
+# IDE/Editor
+.idea/
+
+# Logs
+*.log
+
+# Local databases (ignore large vector stores)
+chroma_legal_db/
+law_chroma_db/
+law_case_chroma_db/
+
+# SQLite databases
+*.sqlite3
+
+# App runtime data
+visualization/chat_data/
+
+# Caches / build
+.cache/
+dist/
+build/
+>>>>>>> f2c6650a0badba4ea238ec3c5ca343fc9a29709c

@@ -104,13 +104,14 @@ def retrieve_and_generate(
     retriever = _get_retriever()
 
     # 召回
-    results: List[Dict] = retriever.retrieve(
+    results,rewrite_query = retriever.retrieve(
         query=question, top_k=top_k, search_type=search_type
     )
 
     # 构建提示
-    sys_prompt, usr_prompt = _build_prompt(question, results)
-
+    # sys_prompt, usr_prompt = _build_prompt(question, results)
+    sys_prompt, usr_prompt = _build_prompt(rewrite_query, results)
+    print(usr_prompt)  # 调试时可查看完整提示内容
     # 生成
     client = _get_client()
     try:
