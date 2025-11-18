@@ -5,9 +5,10 @@ import requests
 from zhipu_config import read_config
 import sys
 from typing import List, Dict
-from zai import ZhipuAI
+from zai import ZhipuAiClient  # 确保 zai.py 在PYTHONPATH中
 from cn2an import cn2an
 import json
+import pandas as pd
 
 # 智谱Embedding3配置
 
@@ -29,7 +30,9 @@ class ZhipuEmbeddingFunction:
         # }
         # response = requests.post(ZHIPU_EMBEDDING_URL, headers=headers, json=data)
         self.zhipu_api_key = os.getenv("ZHIPU_API_KEY")
-        client = ZhipuAI(api_key= self.zhipu_api_key)
+        if not self.zhipu_api_key:
+             raise ValueError("ZHIPU_API_KEY environment variable not set.")
+        client = ZhipuAiClient(api_key= self.zhipu_api_key)
         response = client.embeddings.create(
                         model="embedding-3", #填写需要调用的模型编码
                         input=input,
@@ -55,7 +58,8 @@ class LegalChromaStore:
         self.law_collection = self.law_client.get_or_create_collection(
             name="law_articles",
             embedding_function=self.embedding_function,
-            metadata={"description": "元数据格式严格为{law_name, law_article_num}"}
+            # --- 修改：更新元数据描述 ---
+            metadata={"description": "元数据格式严格为{law_name, law_article_num, keywords}"}
         )
         self.law_case_collection = self.law_case_client.get_or_create_collection(
             name="law_case_articles",
@@ -74,7 +78,14 @@ class LegalChromaStore:
         if not match:
             return None
         law_name = match.group(1).strip()
-        law_article_num = cn2an(match.group(2).strip())
+        try :
+            temp_num = match.group(2).strip()
+            law_article_num = cn2an(temp_num)
+        except ValueError as e:
+            
+            print(law_name)
+            print (temp_num)
+            sys.exit(0)
         law_content = match.group(3).strip()
         return {
             # 提取字段严格对应元数据要求
@@ -91,48 +102,53 @@ class LegalChromaStore:
         
         for case in cases:
             # 提取案件核心信息
-            case_id = case.get("id", "")
-            case_name = case.get("case_name", "")
-            criminal_charge = case.get("criminal_charge", "")
-            case_facts = case.get("case_facts", "").strip()
-            judgment_holding = case.get("judgement_holding", "").strip()
-            related_laws = case.get("related_laws", [])
-            judgement_date = case.get("judgment_date",[])
+            doc_id = case.get("doc_id", "")
+            txt = case.get("text", "")
+            metadata = case.get("metadata", "")
 
-            # 构建法律关联信息文本
-            law_info = {}
-            for law in related_laws:
-                law_name = law.get("law_name", "")
-                article_nums_arr = law.get("article_numbers", [])
-                if not law_name or not article_nums_arr:
-                    continue
-                law_info[law_name] = article_nums_arr
-            law_info_str = json.dumps(law_info, ensure_ascii=False)
-
-            # 生成案件文档文本（整合关键信息，便于后续检索）
-            case_text = f"""案件ID：{case_id}, 案件名称：{case_name}, 罪名：{criminal_charge}, 关联法律：{law_info}, 裁判要旨：{judgment_holding}, 基本案情：{case_facts}"""
             parsed_cases.append({
-                "text": case_text,
-                "metadata": {
-                    "case_id": str(case_id),
-                    "case_name": case_name,
-                    "criminal_charge": criminal_charge,
-                    "related_laws": law_info_str,
-                    "judgement_date": judgement_date,
-                },
-                "id": f"case_{case_id}"  # 唯一ID：case_+案件ID
+                "text": txt,
+                "metadata": metadata,
+                "id": doc_id
             })
+
         return parsed_cases
+
+    # --- 新增：生成关键词的辅助方法 ---
+    def _generate_keywords(self, client: ZhipuAiClient, prompt,law_text: str) -> List[str]:
+        """使用Zhipu GLM-4为法条文本生成关键词"""
+        try:
+            prompt = prompt
+            response = client.chat.completions.create(
+                model="glm-glm-4-flashx",  # 使用GLM-4 (GLM-4.6在API中通常用glm-4标识)
+                messages=[
+                    {"role": "user", "content": f"法条内容：'{law_text}'\n\n{prompt}"}
+                ],
+                temperature=0.1, # 低温获取更稳定、相关的词
+            )
+            
+            content = response.choices[0].message.content.strip()
+            
+            # 解析关键词，模型可能返回 "词1、词2、词3" 或 "词1, 词2, 词3" 或 "1. 词1 2. 词2"
+            # 使用正则表达式提取所有中英文词汇
+            keywords = re.findall(r'[\u4e00-\u9fa5a-zA-Z]+', content)
+            
+            # 返回前4个，符合prompt要求
+            return keywords[:4] if keywords else []
+        except Exception as e:
+            print(f"Warning: Keyword generation failed for doc '{law_text[:50]}...': {e}")
+            return [] # 发生错误时返回空列表
+    # --- 新增结束 ---
 
     
     def store_law(self, cleaned_data_dir_name):
-        """分批入库，解决智谱API单次输入限制"""
+        """分批入库，解决智谱API单次输入限制（已更新为包含关键词生成）"""
         cleaned_data_dir = os.path.join(self.workdir, cleaned_data_dir_name)
         if self.law_collection.count() > 0:
             print(f"已存在{self.law_collection.count()}条数据，跳过入库")
             return
         
-        # 收集所有待入库数据
+        # 1. 收集所有待入库数据
         all_documents = []
         all_metadatas = []
         all_ids = []
@@ -147,6 +163,7 @@ class LegalChromaStore:
                             all_metadatas.append({
                                 "law_name": parsed["law_name"],
                                 "law_article_num": parsed["law_article_num"]
+                                # keywords 将在下一步添加
                             })
                             all_ids.append(parsed["id"])
         
@@ -154,14 +171,44 @@ class LegalChromaStore:
             print("未找到有效数据")
             return
         
-        # 分批入库（每批不超过self.max_batch_size）
         total = len(all_documents)
-        print(f"开始入库，共{total}条数据，每批最多{self.max_batch_size}条...")
+        
+        # --- 2. 新增：逐条生成关键词 ---
+        print(f"共找到{total}条数据，开始逐条生成关键词（这可能需要一些时间）...")
+        try:
+            # 初始化ZhipuAI客户端 (用于GLM-4)
+            self.zhipu_api_key = os.getenv("ZHIPU_API_KEY")
+            if not self.zhipu_api_key:
+                raise ValueError("ZHIPU_API_KEY environment variable not set.")
+            client = ZhipuAiClient(api_key=self.zhipu_api_key)
+            # 读取prompt
+            with open('prompts_keywords.txt', 'r', encoding='utf-8') as file:
+                prompt = file.read()
+            # 逐条为all_metadatas添加keywords
+            for i in range(total):
+                doc_text = all_documents[i]
+                # 调用新方法生成关键词
+                keywords_list = self._generate_keywords(client,prompt, doc_text)
+                
+                # 将关键词列表合并为逗号分隔的字符串，存入元数据
+                all_metadatas[i]["keywords"] = ", ".join(keywords_list)
+                
+                if (i + 1) % 10 == 0 or i == total - 1:
+                    print(f"已处理 {i + 1}/{total} 条法条的关键词...")
+
+        except Exception as e:
+            print(f"Error during keyword generation: {e}")
+            print("Aborting storage process.")
+            return
+        # --- 关键词生成结束 ---
+        
+        # 3. 分批入库（每批不超过self.max_batch_size）
+        print(f"关键词生成完毕。开始分批入库，共{total}条数据，每批最多{self.max_batch_size}条...")
         
         for i in range(0, total, self.max_batch_size):
             end = min(i + self.max_batch_size, total)
             batch_docs = all_documents[i:end]
-            batch_metas = all_metadatas[i:end]
+            batch_metas = all_metadatas[i:end] # 这里的metas已经包含了keywords
             batch_ids = all_ids[i:end]
             
             self.law_collection.add(
@@ -172,6 +219,7 @@ class LegalChromaStore:
             print(f"已入库第{i+1}-{end}条（共{total}条）")
         
         print(f"全部数据入库完成，共{self.law_collection.count()}条")
+
     def store_case(self, case_json_path: str):
         """将解析后的案件数据分批入库"""
         
@@ -188,22 +236,31 @@ class LegalChromaStore:
         
         total = len(all_documents)
         print(f"开始入库案件数据，共{total}条，每批最多{self.max_batch_size}条...")
-        
-        # 分批入库
-        for i in range(0, total, self.max_batch_size):
-            end = min(i + self.max_batch_size, total)
-            batch_docs = all_documents[i:end]
-            batch_metas = all_metadatas[i:end]
-            batch_ids = all_ids[i:end]
-            
-            self.law_case_collection.add(
-                documents=batch_docs,
-                metadatas=batch_metas,
-                ids=batch_ids
-            )
-            print(f"已入库案件数据第{i+1}-{end}条（共{total}条）")
+
+        # 一条一条的入库，因为case的单条长度过长了
+        # 记录一下意外没有入库的案例 case_except
+        case_except =pd.DataFrame(columns=['e', 'id', 'document', 'metadata'])
+        for i in range(0, total):
+            batch_docs = all_documents[i]
+            batch_metas = all_metadatas[i]
+            batch_ids = all_ids[i]
+            try:
+                self.law_case_collection.add(
+                    documents=[batch_docs],
+                    metadatas=[batch_metas],
+                    ids=[batch_ids]
+                )
+            except Exception as e:
+                new_row = pd.DataFrame([
+                                        [e,batch_ids ,batch_docs , batch_metas]
+                                        ],
+                                        columns=['e', 'id', 'document', 'metadata'])
+                # 使用concat方法添加行
+                case_except = pd.concat([case_except, new_row], ignore_index=True)
+            print(f"已入库案件数据第{i+1}条（共{total}条）")
         
         print(f"案件数据全部入库完成，共{self.law_case_collection.count()}条")
+        return case_except
     def get_all_cases(self, limit: int = 100) -> List[Dict]:
         """批量查询案件数据（默认最多100条，可调整）"""
         # 先获取所有案件的ID
@@ -270,8 +327,8 @@ if __name__ == "__main__":
     if target == "law":
         store.store_law(data_storage)
     else:
-        store.store_case(os.path.join(workdir, data_storage))
-    
+        case_except = store.store_case(os.path.join(workdir, data_storage))
+        case_except.to_excel('case_excep.xlsx')  
     # For test, testing the law case retrieval from db 
     if target == "law_case":
         res = store.get_all_cases()
