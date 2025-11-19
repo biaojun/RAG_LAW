@@ -111,6 +111,8 @@ def rag_answer(request: QuestionRequest) -> tuple:
     try:
         answer, context = rag_retrieve_and_generate(request.question, top_k=request.topk, top_p=request.topP)
         display_context = []
+        #print("finished RAG retrieval, raw context:")
+        #print(context)
         n = 1
         
         # 处理法律条文
@@ -119,15 +121,15 @@ def rag_answer(request: QuestionRequest) -> tuple:
             try:
                 law = c.get("law_name") or "未知法典"
                 art = c.get("law_article_num") or "?"
-                similarity = c.get("similarity") or 0.0
-                rerank_score = c.get("rerank_score") or 0.0
+                #similarity = c.get("similarity") or 0.0
+                #rerank_score = c.get("rerank_score") or 0.0
                 snippet = c.get("snippet") or ""
                 # 限制片段长度
                 if len(snippet) > 200:
                     snippet = snippet[:200] + "..."
                 display_context.append(
                     f"{n}) [法条] 《{law}》第{art}条\n"
-                    f"   相似度: {similarity:.4f}, 重排分数: {rerank_score:.4f}\n"
+                    #f"   相似度: {similarity:.4f}, 重排分数: {rerank_score:.4f}\n"
                     f"   内容: {snippet}"
                 )
                 n += 1
@@ -140,15 +142,15 @@ def rag_answer(request: QuestionRequest) -> tuple:
         for c in case_contexts:
             try:
                 case_id = c.get("case_id") or c.get("id") or "未知案例"
-                similarity = c.get("similarity") or 0.0
-                rerank_score = c.get("rerank_score") or 0.0
+                #similarity = c.get("similarity") or 0.0
+                #rerank_score = c.get("rerank_score") or 0.0
                 snippet = c.get("snippet") or ""
                 # 限制片段长度
                 if len(snippet) > 200:
                     snippet = snippet[:200] + "..."
                 display_context.append(
                     f"{n}) [案例] 案例ID: {case_id}\n"
-                    f"   相似度: {similarity:.4f}, 重排分数: {rerank_score:.4f}\n"
+                    #f"   相似度: {similarity:.4f}, 重排分数: {rerank_score:.4f}\n"
                     f"   内容: {snippet}"
                 )
                 n += 1
@@ -486,6 +488,7 @@ async def get_message_detail(conversation_id: str, message_id: str):
             if parsed.get('id') == message_id and parsed.get('type') == 'answer':
                 return {
                     "id": parsed.get('id'),
+                    "timestamp": parsed.get('timestamp'),
                     "question": parsed.get('question'),
                     "answer": parsed.get('answer'),
                     "context": parsed.get('context', []),
