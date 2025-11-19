@@ -2,10 +2,6 @@
 *_db
 data_processing/__pycache__
 data_processing/formal_*
-<<<<<<< HEAD
-__pycache__
-.vscode
-=======
 .vscode
  
 # OS
@@ -16,6 +12,7 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+*.pyc
 *.egg-info/
 .venv/
 venv/
@@ -42,4 +39,3 @@ visualization/chat_data/
 .cache/
 dist/
 build/
->>>>>>> f2c6650a0badba4ea238ec3c5ca343fc9a29709c

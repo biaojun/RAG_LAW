@@ -12,10 +12,10 @@ except Exception:
 # 为避免直接依赖第三方包导入错误，这里复用 ret.py 内已导入并暴露在模块命名空间的 ZhipuAI
 try:
     # 与上方的导入路径保持一致
-    from RAG_LAW.Retrieval.ret import ZhipuAI  # type: ignore
+    from RAG_LAW.Retrieval.ret import ZhipuAiClient  # type: ignore
 except Exception:
     try:
-        from Retrieval.ret import ZhipuAI  # type: ignore
+        from Retrieval.ret import ZhipuAiClient  # type: ignore
     except Exception as e:
         raise ImportError(
             "未能通过 ret.py 获取 ZhipuAI，请确保 ret.py 可被导入（包含对 zai 的可用依赖）。"
@@ -23,7 +23,7 @@ except Exception:
 
 
 _retriever: Optional[EnhancedLegalRetriever] = None
-_client: Optional[ZhipuAI] = None
+_client: Optional[ZhipuAiClient] = None
 
 
 def _get_retriever() -> EnhancedLegalRetriever:
@@ -34,11 +34,11 @@ def _get_retriever() -> EnhancedLegalRetriever:
     return _retriever
 
 
-def _get_client() -> ZhipuAI:
+def _get_client() -> ZhipuAiClient:
     global _client
     if _client is None:
         api_key = os.environ.get("ZHIPU_API_KEY", ZHIPU_API_KEY)
-        _client = ZhipuAI(api_key=api_key)
+        _client = ZhipuAiClient(api_key=api_key)
     return _client
 
 
@@ -104,13 +104,14 @@ def retrieve_and_generate(
     retriever = _get_retriever()
 
     # 召回
-    results,rewrite_query = retriever.retrieve(
+    results = retriever.retrieve(
         query=question, top_k=top_k, search_type=search_type
     )
+    rewritten_query = results[0]["rewritten_query"]
 
     # 构建提示
     # sys_prompt, usr_prompt = _build_prompt(question, results)
-    sys_prompt, usr_prompt = _build_prompt(rewrite_query, results)
+    sys_prompt, usr_prompt = _build_prompt(rewritten_query, results)
     print(usr_prompt)  # 调试时可查看完整提示内容
     # 生成
     client = _get_client()
