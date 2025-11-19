@@ -19,6 +19,9 @@ from enum import Enum
 from typing import List, Union, Dict, Any
 import sys
 import numpy as np
+import time  # 新增：用于计时
+from tqdm.asyncio import tqdm_asyncio  # 新增：异步进度条
+from tqdm import tqdm  # 新增：同步进度条
 
 CONFIG_FILE = "config/config.json"
 
@@ -54,7 +57,7 @@ IMPORTANT OUTPUT REQUIREMENTS:
         updated_prompt.instruction = add_json_format_constraint(original_prompt.instruction)
         updated_prompts[prompt_name] = updated_prompt
 
-    metric.set_prompts(** updated_prompts)
+    metric.set_prompts(**updated_prompts)
     return metric
 
 class RAGEvaluator:
@@ -91,50 +94,61 @@ class RAGEvaluator:
         # self.context_relevance_metric = add_json_constraint_to_metric(ContextRelevance(llm=self.llm))
         
 
-    # 原有指标计算方法保持不变...
+    # 原有指标计算方法添加进度条
     async def calculate_recall(self, sample: Union[SingleTurnSample, List[SingleTurnSample]]) -> Union[float, List[float]]:
         if isinstance(sample, list):
-            return [await self.context_recall_metric.single_turn_ascore(s) for s in sample]
+            # 为列表处理添加异步进度条
+            return await tqdm_asyncio.gather(
+                *[self.context_recall_metric.single_turn_ascore(s) for s in sample],
+                desc="Calculating Context Recall"
+            )
         else:
             return await self.context_recall_metric.single_turn_ascore(sample)
 
     async def calculate_precision(self, sample: Union[SingleTurnSample, List[SingleTurnSample]]) -> Union[float, List[float]]:
         if isinstance(sample, list):
-            return [await self.context_precision_metric.single_turn_ascore(s) for s in sample]
+            return await tqdm_asyncio.gather(
+                *[self.context_precision_metric.single_turn_ascore(s) for s in sample],
+                desc="Calculating Context Precision"
+            )
         else:
             return await self.context_precision_metric.single_turn_ascore(sample)
 
     async def calculate_context_entity_recall(self, sample: Union[SingleTurnSample, List[SingleTurnSample]]) -> Union[float, List[float]]:
         if isinstance(sample, list):
-            return [await self.context_entity_recall_metric.single_turn_ascore(s) for s in sample]
+            return await tqdm_asyncio.gather(
+                *[self.context_entity_recall_metric.single_turn_ascore(s) for s in sample],
+                desc="Calculating Entity Recall"
+            )
         else:
             return await self.context_entity_recall_metric.single_turn_ascore(sample)
 
     async def calculate_noise_sensitivity(self, sample: Union[SingleTurnSample, List[SingleTurnSample]]) -> Union[float, List[float]]:
         if isinstance(sample, list):
-            return [await self.noise_sensitivity_metric.single_turn_ascore(s) for s in sample]
+            return await tqdm_asyncio.gather(
+                *[self.noise_sensitivity_metric.single_turn_ascore(s) for s in sample],
+                desc="Calculating Noise Sensitivity"
+            )
         else:
             return await self.noise_sensitivity_metric.single_turn_ascore(sample)
 
     async def calculate_faithfulness(self, sample: Union[SingleTurnSample, List[SingleTurnSample]]) -> Union[float, List[float]]:
         if isinstance(sample, list):
-            return [await self.faithfulness_metric.single_turn_ascore(s) for s in sample]
+            return await tqdm_asyncio.gather(
+                *[self.faithfulness_metric.single_turn_ascore(s) for s in sample],
+                desc="Calculating Faithfulness"
+            )
         else:
             return await self.faithfulness_metric.single_turn_ascore(sample)
 
     async def calculate_response_relevancy(self, sample: Union[SingleTurnSample, List[SingleTurnSample]]) -> Union[float, List[float]]:
         if isinstance(sample, list):
-            return [await self.response_relevancy_metric.single_turn_ascore(s) for s in sample]
+            return await tqdm_asyncio.gather(
+                *[self.response_relevancy_metric.single_turn_ascore(s) for s in sample],
+                desc="Calculating Response Relevancy"
+            )
         else:
             return await self.response_relevancy_metric.single_turn_ascore(sample)
-
-    # # 新增指标计算方法
-    # async def calculate_context_relevance(self, sample: Union[SingleTurnSample, List[SingleTurnSample]]) -> Union[float, List[float]]:
-    #     if isinstance(sample, list):
-    #         return [await self.context_relevance_metric.single_turn_ascore(s) for s in sample]
-    #     else:
-    #         return await self.context_relevance_metric.single_turn_ascore(sample)
-
 
 
     async def evaluate(self, sample: Union[SingleTurnSample, List[SingleTurnSample]]) -> dict:
@@ -146,7 +160,6 @@ class RAGEvaluator:
             self.calculate_noise_sensitivity(sample),
             self.calculate_faithfulness(sample),
             self.calculate_response_relevancy(sample),
-            # self.calculate_context_relevance(sample),
         ]
         # 同时执行所有任务
         recall_scores, precision_scores, entity_recall_scores, noise_sensitivity_scores, \
@@ -163,7 +176,6 @@ class RAGEvaluator:
             "noise_sensitivity_scores": ensure_list(noise_sensitivity_scores),
             "faithfulness_scores": ensure_list(faithfulness_scores),
             "response_relevancy_scores": ensure_list(response_relevancy_scores),
-            # "context_relevance_scores": ensure_list(context_relevance_scores),
         }
     
     async def evaluate_with_stats(self, sample: Union[SingleTurnSample, List[SingleTurnSample]]) -> Dict[str, Any]:
@@ -172,9 +184,16 @@ class RAGEvaluator:
         if total == 0:
             return {}
 
+        # 记录评估开始时间
+        start_time = time.time()
+        
         eval_results = await self.evaluate(samples)
         
-        # 更新指标名称映射，加入新增指标
+        # 计算评估耗时
+        elapsed_time = time.time() - start_time
+        print(f"\nEvaluation completed in {elapsed_time:.2f} seconds")
+        print(f"Average time per sample: {elapsed_time/total:.4f} seconds" if total > 0 else "")
+        
         metric_names = {
             "context_recall": "Context Recall",
             "context_precision": "Context Precision",
@@ -182,12 +201,12 @@ class RAGEvaluator:
             "noise_sensitivity_scores": "Noise Sensitivity",
             "faithfulness_scores": "Faithfulness",
             "response_relevancy_scores": "Response Relevancy",
-            # "context_relevance_scores": "Context Relevance",
         }
         
         stats = {}
         
-        for metric_key, scores in eval_results.items():
+        # 为统计计算添加进度条
+        for metric_key, scores in tqdm(eval_results.items(), desc="Calculating Statistics"):
             try:
                 scores_array = np.array(scores, dtype=np.float64)
             except ValueError:
@@ -232,8 +251,14 @@ async def main():
     json_file = sys.argv[1]
     
     try:
+        # 加载数据时添加进度提示
+        print(f"Loading data from {json_file}...")
+        start_load = time.time()
         with open(json_file, 'r', encoding='utf-8') as f:
             test_data = json.load(f)
+        load_time = time.time() - start_load
+        print(f"Data loaded in {load_time:.2f} seconds")
+        
     except FileNotFoundError:
         print(f"Error: File '{json_file}' does not exist")
         sys.exit(1)
@@ -241,8 +266,9 @@ async def main():
         print(f"Error: File '{json_file}' is not valid JSON format")
         sys.exit(1)
     
+    # 转换样本时添加进度条
     samples = []
-    for item in test_data:
+    for item in tqdm(test_data, desc="Preparing samples"):
         sample = SingleTurnSample(
             user_input=item.get("user_input", ""),
             response=item.get("response", ""),
@@ -251,8 +277,15 @@ async def main():
         )
         samples.append(sample)
     
+    # 总耗时统计
+    total_start_time = time.time()
+    
     evaluator = RAGEvaluator()
     stats_result = await evaluator.evaluate_with_stats(samples)
+    
+    total_elapsed = time.time() - total_start_time
+    print(f"\nTotal processing time: {total_elapsed:.2f} seconds")
+    
     print("Evaluation Statistics:")
     print(json.dumps(stats_result, ensure_ascii=False, indent=2))
     

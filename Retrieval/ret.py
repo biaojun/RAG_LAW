@@ -193,7 +193,7 @@ class RerankModel:
 
 
 class EnhancedLegalRetriever:
-    def __init__(self, chroma_persist_dir: str = "./chroma_legal_db"):
+    def __init__(self, chroma_persist_dir: str = "../chroma_legal_db"):
         self.client = chromadb.PersistentClient(path=chroma_persist_dir)
         self.collection = self.client.get_collection(
             name="legal_articles",

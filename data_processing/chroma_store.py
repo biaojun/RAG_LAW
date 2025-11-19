@@ -321,7 +321,7 @@ if __name__ == "__main__":
         sys.exit(1)
     
     workdir = os.getcwd()
-    store = LegalChromaStore(workdir=workdir)
+    store = LegalChromaStore(workdir=workdir, law_db_dir="chroma_legal_db")
     
     # Store appropriate data based on target
     if target == "law":
