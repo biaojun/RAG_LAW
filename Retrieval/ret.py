@@ -478,7 +478,7 @@ class EnhancedLegalRetriever:
                 case_final_results.append({
                     **doc_info,
                     "similarity": round(score, 4),
-                    "bm25_score": next((r["bm25_score"] for r in law_bm25_results if r["id"] == doc_id), 0),
+                    "bm25_score": next((r["bm25_score"] for r in case_bm25_results if r["id"] == doc_id), 0),
                     "type": "hybrid"
                 })
 
