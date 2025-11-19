@@ -30,11 +30,35 @@ export ZHIPU_API_KEY="<你的智谱APIKey>"
 
 ### 启动服务
 
+#### 方式一：启动 API 服务（推荐用于生产环境）
+
 ```zsh
 uvicorn api_server:app --reload --host 0.0.0.0 --port 8000
 ```
 
 启动成功后访问：`http://127.0.0.1:8000`
+
+#### 方式二：启动可视化后端（带 Web 界面）
+
+```zsh
+python visualization/backend.py
+```
+
+或者：
+
+```zsh
+cd visualization
+python backend.py
+```
+
+启动成功后访问：
+- Web 界面：`http://localhost:8000` 或 `http://localhost:8000/static/rag.html`
+- API 接口：`http://localhost:8000/api/ask`
+
+**注意事项**：
+- 后端会在启动时自动预初始化 RAG 系统（包括 BM25 索引和向量数据库），首次启动可能需要 10-30 秒
+- 初始化完成后会显示 "RAG 系统预热完成，可以接受请求！"
+- 预初始化后，所有后续请求都会直接使用已加载的模型，响应速度更快
 
 ### 调用示例
 
