@@ -3,13 +3,10 @@ from ragas.metrics import (
     LLMContextRecall, 
     LLMContextPrecisionWithoutReference, 
     ContextEntityRecall, 
-    NoiseSensitivity, 
     Faithfulness,
     ResponseRelevancy,
     MetricWithLLM,
-    ContextRelevance,  # 新增
 )
-# 新增指标导入
 from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 import os
@@ -19,9 +16,10 @@ from enum import Enum
 from typing import List, Union, Dict, Any
 import sys
 import numpy as np
-import time  # 新增：用于计时
-from tqdm.asyncio import tqdm_asyncio  # 新增：异步进度条
-from tqdm import tqdm  # 新增：同步进度条
+import time
+from tqdm.asyncio import tqdm_asyncio
+from tqdm import tqdm
+import csv  # 新增CSV模块
 
 CONFIG_FILE = "config/config.json"
 
@@ -37,9 +35,6 @@ from typing import TypeVar
 MetricType = TypeVar("MetricType", bound="MetricWithLLM")
 
 def add_json_constraint_to_metric(metric: MetricType) -> MetricType:
-    """
-    Add JSON output constraints to ragas metric prompts, compatible with the set_prompts(** prompts) method.
-    """
     def add_json_format_constraint(original_instruction: str) -> str:
         json_constraint = """
 
@@ -81,23 +76,19 @@ class RAGEvaluator:
             openai_api_key=os.getenv(f"{LLMModel.ZHIPU.value}_API_KEY")
         )
 
-        # 初始化原有指标
         self.context_recall_metric = add_json_constraint_to_metric(LLMContextRecall(llm=self.llm))
         self.context_precision_metric = add_json_constraint_to_metric(LLMContextPrecisionWithoutReference(llm=self.llm))
         self.context_entity_recall_metric = add_json_constraint_to_metric(ContextEntityRecall(llm=self.llm))
-        self.noise_sensitivity_metric = add_json_constraint_to_metric(NoiseSensitivity(llm=self.llm))
         self.faithfulness_metric = add_json_constraint_to_metric(Faithfulness(llm=self.llm))
         self.response_relevancy_metric = add_json_constraint_to_metric(ResponseRelevancy(
             llm=self.llm,
             embeddings=self.embeddings
         ))
-        # self.context_relevance_metric = add_json_constraint_to_metric(ContextRelevance(llm=self.llm))
         
 
-    # 原有指标计算方法添加进度条
+
     async def calculate_recall(self, sample: Union[SingleTurnSample, List[SingleTurnSample]]) -> Union[float, List[float]]:
         if isinstance(sample, list):
-            # 为列表处理添加异步进度条
             return await tqdm_asyncio.gather(
                 *[self.context_recall_metric.single_turn_ascore(s) for s in sample],
                 desc="Calculating Context Recall"
@@ -123,15 +114,6 @@ class RAGEvaluator:
         else:
             return await self.context_entity_recall_metric.single_turn_ascore(sample)
 
-    async def calculate_noise_sensitivity(self, sample: Union[SingleTurnSample, List[SingleTurnSample]]) -> Union[float, List[float]]:
-        if isinstance(sample, list):
-            return await tqdm_asyncio.gather(
-                *[self.noise_sensitivity_metric.single_turn_ascore(s) for s in sample],
-                desc="Calculating Noise Sensitivity"
-            )
-        else:
-            return await self.noise_sensitivity_metric.single_turn_ascore(sample)
-
     async def calculate_faithfulness(self, sample: Union[SingleTurnSample, List[SingleTurnSample]]) -> Union[float, List[float]]:
         if isinstance(sample, list):
             return await tqdm_asyncio.gather(
@@ -152,17 +134,14 @@ class RAGEvaluator:
 
 
     async def evaluate(self, sample: Union[SingleTurnSample, List[SingleTurnSample]]) -> dict:
-        # 并行计算所有指标
         tasks = [
             self.calculate_recall(sample),
             self.calculate_precision(sample),
             self.calculate_context_entity_recall(sample),
-            self.calculate_noise_sensitivity(sample),
             self.calculate_faithfulness(sample),
             self.calculate_response_relevancy(sample),
         ]
-        # 同时执行所有任务
-        recall_scores, precision_scores, entity_recall_scores, noise_sensitivity_scores, \
+        recall_scores, precision_scores, entity_recall_scores, \
         faithfulness_scores, response_relevancy_scores = await asyncio.gather(*tasks)
     
         
@@ -173,7 +152,6 @@ class RAGEvaluator:
             "context_recall": ensure_list(recall_scores),
             "context_precision": ensure_list(precision_scores),
             "entity_recall_scores": ensure_list(entity_recall_scores),
-            "noise_sensitivity_scores": ensure_list(noise_sensitivity_scores),
             "faithfulness_scores": ensure_list(faithfulness_scores),
             "response_relevancy_scores": ensure_list(response_relevancy_scores),
         }
@@ -184,28 +162,24 @@ class RAGEvaluator:
         if total == 0:
             return {}
 
-        # 记录评估开始时间
         start_time = time.time()
-        
         eval_results = await self.evaluate(samples)
-        
-        # 计算评估耗时
         elapsed_time = time.time() - start_time
         print(f"\nEvaluation completed in {elapsed_time:.2f} seconds")
         print(f"Average time per sample: {elapsed_time/total:.4f} seconds" if total > 0 else "")
+        
+        # 新增：保存单个case的评估结果到CSV
+        self.save_to_csv(samples, eval_results)
         
         metric_names = {
             "context_recall": "Context Recall",
             "context_precision": "Context Precision",
             "entity_recall_scores": "Entity Recall",
-            "noise_sensitivity_scores": "Noise Sensitivity",
             "faithfulness_scores": "Faithfulness",
             "response_relevancy_scores": "Response Relevancy",
         }
         
         stats = {}
-        
-        # 为统计计算添加进度条
         for metric_key, scores in tqdm(eval_results.items(), desc="Calculating Statistics"):
             try:
                 scores_array = np.array(scores, dtype=np.float64)
@@ -242,6 +216,42 @@ class RAGEvaluator:
             }
         
         return stats
+    
+    # 新增：保存到CSV的方法
+    def save_to_csv(self, samples: List[SingleTurnSample], eval_results: Dict[str, List[float]]):
+        """将每个case的详细信息和评估指标保存到CSV"""
+        output_file = "evaluation_cases.csv"
+        # CSV列名
+        fieldnames = [
+            "case_index",
+            "user_input",
+            "response",
+            "context_recall",
+            "context_precision",
+            "entity_recall",
+            "faithfulness",
+            "response_relevancy"
+        ]
+        
+        with open(output_file, 'w', encoding='utf-8', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            
+            # 遍历每个样本写入数据
+            for i, sample in enumerate(samples):
+                writer.writerow({
+                    "case_index": i,
+                    "user_input": sample.user_input,
+                    "response": sample.response,
+                    "context_recall": round(eval_results["context_recall"][i], 4),
+                    "context_precision": round(eval_results["context_precision"][i], 4),
+                    "entity_recall": round(eval_results["entity_recall_scores"][i], 4),
+                    "faithfulness": round(eval_results["faithfulness_scores"][i], 4),
+                    "response_relevancy": round(eval_results["response_relevancy_scores"][i], 4)
+                })
+        
+        print(f"Individual case results saved to {output_file}")
+
 
 async def main():
     if len(sys.argv) != 2:
@@ -251,7 +261,6 @@ async def main():
     json_file = sys.argv[1]
     
     try:
-        # 加载数据时添加进度提示
         print(f"Loading data from {json_file}...")
         start_load = time.time()
         with open(json_file, 'r', encoding='utf-8') as f:
@@ -266,7 +275,6 @@ async def main():
         print(f"Error: File '{json_file}' is not valid JSON format")
         sys.exit(1)
     
-    # 转换样本时添加进度条
     samples = []
     for item in tqdm(test_data, desc="Preparing samples"):
         sample = SingleTurnSample(
@@ -277,7 +285,6 @@ async def main():
         )
         samples.append(sample)
     
-    # 总耗时统计
     total_start_time = time.time()
     
     evaluator = RAGEvaluator()
@@ -289,10 +296,10 @@ async def main():
     print("Evaluation Statistics:")
     print(json.dumps(stats_result, ensure_ascii=False, indent=2))
     
-    output_file = "evaluation_stats.json"
-    with open(output_file, 'w', encoding='utf-8') as f:
+    output_file = f"{json_file.split('.')[0]}_evaluation_stats.json"
+    with open(output_file, 'w', encoding='gbk') as f:
         json.dump(stats_result, f, ensure_ascii=False, indent=2)
-    print(f"\nResults saved to {output_file}")
+    print(f"Summary statistics saved to {output_file}")
 
 
 if __name__ == "__main__":
