@@ -35,6 +35,26 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(STATIC_DIR, exist_ok=True)
 
+
+@app.on_event("startup")
+async def startup_event():
+    """应用启动时预初始化 RAG 系统"""
+    if RAG_AVAILABLE and initialize_rag_system:
+        print("\n" + "="*60)
+        print("启动时预初始化 RAG 系统...")
+        print("="*60)
+        try:
+            initialize_rag_system()
+            print("="*60)
+            print("RAG 系统预热完成，可以接受请求！")
+            print("="*60 + "\n")
+        except Exception as e:
+            print(f"警告: RAG 系统初始化失败: {e}")
+            print("将在运行时回退到本地演示模式\n")
+    else:
+        print("\n提示: RAG 模块不可用，将使用本地演示模式\n")
+
+
 class QuestionRequest(BaseModel):
     question: str
     conversation_id: Optional[str] = None
@@ -52,8 +72,11 @@ class QuestionResponse(BaseModel):
 
 # 优先尝试导入 RAG 流程；失败则在运行时回退到本地演示回答
 RAG_AVAILABLE = False
+rag_retrieve_and_generate = None
+initialize_rag_system = None
+
 try:
-    from rag_pipeline import retrieve_and_generate as rag_retrieve_and_generate  # 从仓库根运行
+    from rag_pipeline import retrieve_and_generate as rag_retrieve_and_generate, initialize_rag_system  # 从仓库根运行
     RAG_AVAILABLE = True
 except Exception:
     try:
@@ -61,7 +84,7 @@ except Exception:
         REPO_ROOT = os.path.dirname(os.path.dirname(__file__))
         if REPO_ROOT not in sys.path:
             sys.path.append(REPO_ROOT)
-        from rag_pipeline import retrieve_and_generate as rag_retrieve_and_generate
+        from rag_pipeline import retrieve_and_generate as rag_retrieve_and_generate, initialize_rag_system
         RAG_AVAILABLE = True
     except Exception:
         RAG_AVAILABLE = False
@@ -83,27 +106,62 @@ def generate_answer(question: str) -> tuple:
     return default_answer, ["系统默认回答"]
 
 
-def rag_answer(question: str) -> tuple:
+def rag_answer(request: QuestionRequest) -> tuple:
     """调用真实的 RAG 流程，并将上下文格式化为可展示的字符串列表。"""
     try:
-        answer, context = rag_retrieve_and_generate(question)
+        answer, context = rag_retrieve_and_generate(request.question, top_k=request.topk, top_p=request.topP)
         display_context = []
+        #print("finished RAG retrieval, raw context:")
+        #print(context)
         n = 1
-        for c in (context or []):
+        
+        # 处理法律条文
+        law_contexts = context.get("law", []) if isinstance(context, dict) else []
+        for c in law_contexts:
             try:
                 law = c.get("law_name") or "未知法典"
                 art = c.get("law_article_num") or "?"
-                similarity = c.get("similarity") or 0.0
-                rerank_score = c.get("rerank_score") or 0.0
+                #similarity = c.get("similarity") or 0.0
+                #rerank_score = c.get("rerank_score") or 0.0
                 snippet = c.get("snippet") or ""
-                display_context.append(f"{n})《{law}》第{art}条，相似度: {similarity:.4f}, 重排分数: {rerank_score:.4f}，内容片段: {snippet}")
+                # 限制片段长度
+                if len(snippet) > 200:
+                    snippet = snippet[:200] + "..."
+                display_context.append(
+                    f"{n}) [法条] 《{law}》第{art}条\n"
+                    #f"   相似度: {similarity:.4f}, 重排分数: {rerank_score:.4f}\n"
+                    f"   内容: {snippet}"
+                )
                 n += 1
-            except Exception:
+            except Exception as e:
+                print(f"处理法律条文上下文失败: {e}")
                 continue
+        
+        # 处理案例
+        case_contexts = context.get("case", []) if isinstance(context, dict) else []
+        for c in case_contexts:
+            try:
+                case_id = c.get("case_id") or c.get("id") or "未知案例"
+                #similarity = c.get("similarity") or 0.0
+                #rerank_score = c.get("rerank_score") or 0.0
+                snippet = c.get("snippet") or ""
+                # 限制片段长度
+                if len(snippet) > 200:
+                    snippet = snippet[:200] + "..."
+                display_context.append(
+                    f"{n}) [案例] 案例ID: {case_id}\n"
+                    #f"   相似度: {similarity:.4f}, 重排分数: {rerank_score:.4f}\n"
+                    f"   内容: {snippet}"
+                )
+                n += 1
+            except Exception as e:
+                print(f"处理案例上下文失败: {e}")
+                continue
+        
         return answer, display_context
     except Exception as e:
         # 回退：不影响前端使用
-        fallback_ans, fallback_ctx = generate_answer(question)
+        fallback_ans, fallback_ctx = generate_answer(request.question)
         safe_err = str(e)
         return f"{fallback_ans}\n\n[提示] RAG 调用异常，已回退本地回答：{safe_err}", fallback_ctx
 
@@ -135,9 +193,9 @@ async def ask_question(request: QuestionRequest):
 
         # 生成回答：优先调用 RAG，失败或不可用时回退到本地演示逻辑
         if RAG_AVAILABLE:
-            answer, context = rag_answer(request.question)
+            answer, context = rag_answer(request)
         else:
-            answer, context = generate_answer(request.question)
+            answer, context = generate_answer(request)
 
         # 准备响应数据
         response_data = {
@@ -430,6 +488,7 @@ async def get_message_detail(conversation_id: str, message_id: str):
             if parsed.get('id') == message_id and parsed.get('type') == 'answer':
                 return {
                     "id": parsed.get('id'),
+                    "timestamp": parsed.get('timestamp'),
                     "question": parsed.get('question'),
                     "answer": parsed.get('answer'),
                     "context": parsed.get('context', []),
@@ -519,5 +578,5 @@ if __name__ == "__main__":
     import uvicorn
 
     print("启动本地问答系统...")
-    print("访问地址: http://localhost:7000")
-    uvicorn.run(app, host="0.0.0.0", port=7000)
+    print("访问地址: http://localhost:8000")
+    uvicorn.run(app, host="0.0.0.0", port=8000)
