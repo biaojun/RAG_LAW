@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import chromadb
 from zai import ZhipuAiClient
-from ret import ZhipuEmbeddingFunction, QueryProcessor
+from .ret import ZhipuEmbeddingFunction, QueryProcessor
 
 load_dotenv()
 ZHIPU_API_KEY = os.environ.get('Api_Key')
@@ -78,7 +78,7 @@ class VectorRetriever:
             print(f"案例向量检索失败: {e}")
             return []
 
-    def retrieve(self, query: str, law_top_k: int = 3, case_top_k: int = 2) -> dict:
+    def retrieve(self, query: str, law_top_k: int = 3, case_top_k: int = 2, search_type: str = "vector") -> dict:
         """
         纯向量检索
         返回: {"law": 法律条文结果, "case": 案例结果}

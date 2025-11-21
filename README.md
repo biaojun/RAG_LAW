@@ -27,6 +27,13 @@ pip install fastapi uvicorn pydantic chromadb zhipuai requests numpy jieba rank_
 ```zsh
 export ZHIPU_API_KEY="<你的智谱APIKey>"
 ```
+(可选)设置向量数据库retrieval 模式
+```zsh
+# LAW_RAG_OPERATION_VECTOR 只用向量进行retrieval
+# LAW_RAG_OPERATION_BM25 只用BM25进行retrieval
+# 其他值或不设 混合模式
+export LAW_RAG_OPERATION_MODE = LAW_RAG_OPERATION_VECTOR
+```
 
 ### 启动服务
 

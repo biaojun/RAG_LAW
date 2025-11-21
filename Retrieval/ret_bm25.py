@@ -3,9 +3,9 @@ import jieba
 import numpy as np
 from dotenv import load_dotenv
 from rank_bm25 import BM25Okapi
-from ret import QueryProcessor
+from .ret import QueryProcessor
 import chromadb
-from ret import ZhipuEmbeddingFunction
+from .ret import ZhipuEmbeddingFunction
 
 load_dotenv()
 ZHIPU_API_KEY = os.environ.get('Api_Key')
@@ -128,7 +128,7 @@ class BM25Retriever:
             for idx in top_indices
         ]
 
-    def retrieve(self, query: str, law_top_k: int = 3, case_top_k: int = 2) -> dict:
+    def retrieve(self, query: str, law_top_k: int = 3, case_top_k: int = 2, search_type: str = "bm25") -> dict:
         """
         纯BM25检索
         返回: {"law": 法律条文结果, "case": 案例结果}
