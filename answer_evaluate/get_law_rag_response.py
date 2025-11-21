@@ -91,7 +91,7 @@ def update_reply_json():
     
     # 保存更新后的文件
     try:
-        with open('reply_by_law_rag.json', 'w', encoding='utf-8') as f:
+        with open('reply_by_law_rag_2.json', 'w', encoding='utf-8') as f:
             json.dump(gemini_replies, f, ensure_ascii=False, indent=2)
         print("处理完成，结果已保存至reply_by_law_rag.json")
     except Exception as e:

@@ -4,7 +4,11 @@
         "api_base": "https://open.bigmodel.cn/api/paas/v4/"
     },
     "DEEPSEEK":{
-        "model_name":"deepseek-reasoner",
+        "model_name":"deepseek-chat",
         "api_base":"https://api.deepseek.com"
+    },
+    "QIANWEN":{
+        "model_name":"qwen3-max",
+        "api_base":"https://dashscope.aliyuncs.com/compatible-mode/v1"
     }
 }

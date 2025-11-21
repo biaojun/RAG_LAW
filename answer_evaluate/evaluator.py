@@ -26,6 +26,7 @@ CONFIG_FILE = "config/config.json"
 class LLMModel(Enum):
     ZHIPU = "ZHIPU"
     DEEPSEEK = "DEEPSEEK"
+    QIANWEN = "QIANWEN"
 
 import copy
 import typing as t
