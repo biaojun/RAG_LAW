@@ -473,10 +473,11 @@
                     <!-- 设置按钮：打开 TopK 设置弹窗 -->
                     <button id="settingsButton" class="settings-button" title="设置">⚙️</button>
 
-                    <!-- 隐藏的 file input：只接受 .txt 和 .csv，change 时调用 uploadFile() -->
+                    <!-- 上传功能暂时禁用：隐藏并注释对应元素 -->
+                    <!--
                     <input type="file" id="fileInput" accept=".txt,.csv" style="display:none" onchange="uploadFile()" />
-                    <!-- 可见的上传按钮：点击时触发隐藏 input 的点击 -->
                     <button id="uploadButton" class="upload-button" title="上传文件(.txt/.csv)" onclick="document.getElementById('fileInput').click()">📎</button>
+                    -->
 
                     <!-- 问题输入区（可多行） -->
                     <textarea 
@@ -967,10 +968,9 @@
         }
 
         /*************************************************************************
-         * 上传文件到后端 (/api/upload)
-         * - 验证扩展名（仅 .txt/.csv）
-         * - 使用 FormData 发送文件，后端保存到 visualization/chat_files
+         * 上传功能已暂时禁用（注释掉实现），如需恢复请取消注释以下实现并恢复对应 HTML
          *************************************************************************/
+        /*
         async function uploadFile() {
             const fileInput = document.getElementById('fileInput');
             if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
@@ -1033,6 +1033,7 @@
                 fileInput.value = '';
             }
         }
+        */
 
         // 通用错误展示函数：在聊天区追加一条错误提示
         function showError(message) {
