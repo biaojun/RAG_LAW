@@ -1,13 +1,28 @@
 import os
 from typing import List, Dict, Tuple, Optional
-
-# 复用你现有的检索与智谱客户端实现
+mode = os.getenv("LAW_RAG_OPERATION_MODE")
 try:
+    from RAG_LAW.Retrieval.ret import ZHIPU_API_KEY
+    match mode:
+        case "LAW_RAG_OPERATION_VECTOR":
+            # 复用你现有的检索与智谱客户端实现
+            from RAG_LAW.Retrieval.ret_vector import VectorRetriever as EnhancedLegalRetriever
+        case "LAW_RAG_OPERATION_BM25":
+            from RAG_LAW.Retrieval.ret_bm25 import BM25Retriever as EnhancedLegalRetriever
+        case _: # 混合检索
+            from RAG_LAW.Retrieval.ret import EnhancedLegalRetriever
     # 优先通过包路径导入（如果从仓库根目录运行，RAG_LAW 会作为命名空间包生效）
-    from RAG_LAW.Retrieval.ret import EnhancedLegalRetriever, ZHIPU_API_KEY
 except Exception:
     # 回退到相对路径导入（如果当前工作目录就在 RAG_LAW）
-    from Retrieval.ret import EnhancedLegalRetriever, ZHIPU_API_KEY  # type: ignore
+    from Retrieval.ret import ZHIPU_API_KEY
+    match mode: 
+        case "LAW_RAG_OPERATION_VECTOR":
+            # 复用你现有的检索与智谱客户端实现
+            from Retrieval.ret_vector import VectorRetriever as EnhancedLegalRetriever
+        case "LAW_RAG_OPERATION_BM25":
+            from Retrieval.ret_bm25 import BM25Retriever as EnhancedLegalRetriever
+        case _: # 混合检索
+            from Retrieval.ret import EnhancedLegalRetriever
 
 # 为避免直接依赖第三方包导入错误，这里复用 ret.py 内已导入并暴露在模块命名空间的 ZhipuAI
 try:
