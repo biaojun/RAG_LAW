@@ -497,10 +497,10 @@
         <!-- 设置模态弹窗（TopK） -->
         <div id="modalBackdrop" class="modal-backdrop">
             <div class="modal">
-                <h3>调整 TopK（0.0 - 1.0）</h3>
-                <div style="font-size:13px;color:#666;margin-bottom:8px;">滑块步进 0.1，当前 TopK 值: <span id="topkDisplay">0.5</span></div>
+                <h3>调整 TopK TopP Temperature</h3>
+                <div style="font-size:13px;color:#666;margin-bottom:8px;">TopK（1 - 50）: <span id="topkDisplay">50</span></div>
                 <div class="controls">
-                    <input id="topkSlider" type="range" min="0" max="1" step="0.1" value="0.5" style="flex:1" oninput="updateSliderDisplay(this.value)" />
+                    <input id="topkSlider" type="range" min="1" max="50" step="1" value="50" style="flex:1" oninput="updateSliderDisplay(this.value)" />
                 </div>
 
                 <!-- 新增 TopP 控件 -->
@@ -549,8 +549,8 @@
     const API_BASE = '/api';
     // 当前会话 id（null 表示未选择/新会话）
     let currentConversationId = null;
-    // topk 当前值（0.0 - 1.0），从 localStorage 中读取，默认 0.5
-    let currentTopK = parseFloat(localStorage.getItem('topk')) || 0.5;
+    // topk 当前值（1 - 50），从 localStorage 中读取，默认 50
+    let currentTopK = parseInt(localStorage.getItem('topk')) || 50;
     // TopP 当前值（0.0 - 1.0），默认 0.9
     let currentTopP = parseFloat(localStorage.getItem('topP')) || 0.9;
     // Temperature 当前值（0.0 - 1.0），默认 0.7
